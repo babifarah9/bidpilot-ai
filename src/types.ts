@@ -1,5 +1,4 @@
-export interface CompanyProfile {
-  id: string;
+export type CompanyProfile = {
   companyName: string;
   companyDescription: string;
   country: string;
@@ -13,45 +12,44 @@ export interface CompanyProfile {
   certifications: string[];
   licenses: string[];
   securityClearances: string[];
-  pastPerformance: PastPerformanceItem[];
-  keyPersonnel: KeyPersonnelItem[];
+  pastPerformance: {
+    client: string;
+    projectTitle: string;
+    contractValue: string;
+    duration: string;
+    description: string;
+    relevance: string;
+  }[];
+  keyPersonnel: {
+    name: string;
+    role: string;
+    yearsExperience: number;
+    clearance: string;
+    certifications: string[];
+  }[];
   geographicEligibility: string[];
   availableTeamSize: number;
   partnersAndSubcontractors: string[];
   differentiators: string[];
   estimatedProposalBudget: string;
-  preferredProposalTone: 'Professional' | 'Technical' | 'Executive' | 'Persuasive' | 'Formal Government';
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-}
+  preferredProposalTone: 'Professional' | 'Executive' | 'Technical' | 'Persuasive';
+  contactInformation: {
+    email: string;
+    phone: string;
+    website: string;
+    address: string;
+  };
+};
 
-export interface PastPerformanceItem {
-  id: string;
-  clientName: string;
-  projectTitle: string;
-  contractValue: string;
-  periodOfPerformance: string;
-  relevance: string;
-  keyResults: string;
-}
-
-export interface KeyPersonnelItem {
-  id: string;
-  name: string;
-  role: string;
-  yearsExperience: number;
-  securityClearance?: string;
-  certifications: string[];
-  bio: string;
-}
-
-export type DocumentClassification =
+export type DocumentType =
   | 'Main Solicitation'
+  | 'RFP'
+  | 'RFQ'
+  | 'Grant Notice'
+  | 'Tender'
   | 'Amendment'
   | 'Addendum'
   | 'Questions and Answers'
-  | 'Q&A Response'
   | 'Statement of Work'
   | 'Statement of Objectives'
   | 'Performance Work Statement'
@@ -65,460 +63,241 @@ export type DocumentClassification =
   | 'Deliverables Schedule'
   | 'Evaluation Worksheet'
   | 'Financial Template'
-  | 'Technical Data Sheet'
-  | 'Other Spreadsheet'
   | 'Required Form'
-  | 'Bid Form'
   | 'Contract Terms'
-  | 'Contract Clause'
   | 'Security Requirements'
   | 'Evaluation Criteria'
   | 'Submission Instructions'
-  | 'Past Performance Form'
   | 'Certifications'
   | 'Other';
 
-export type DocumentProcessingStatus = 
-  | 'Pending' 
-  | 'Uploading' 
-  | 'Processing' 
-  | 'Processed' 
-  | 'Processing Failed' 
-  | 'Scanned PDF Warning';
-
-export type DocumentVersionStatus = 'Current' | 'Superseded' | 'Possible Duplicate' | 'Needs Review';
-
-export interface OpportunityDocument {
+export type OpportunityDocument = {
   id: string;
   filename: string;
-  type: DocumentClassification;
-  size: number; // in bytes
+  fileType: 'pdf' | 'docx' | 'xlsx' | 'xls' | 'csv';
+  classification: DocumentType;
+  fileSize: number;
   pageCount?: number;
-  uploadedAt: string;
-  status: DocumentProcessingStatus;
-  priority: 'High' | 'Medium' | 'Low';
-  version?: string;
+  sheetCount?: number;
+  uploadDate: string;
+  processingStatus: 'PENDING' | 'PARSED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'SCAN_DETECTED';
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  version: string;
   amendmentNumber?: string;
   effectiveDate?: string;
-  versionStatus?: DocumentVersionStatus;
-  isScanned?: boolean;
-  errorMessage?: string;
-  contentText?: string;
-  
-  // Spreadsheet specific metadata
-  isSpreadsheet?: boolean;
-  sheetsCount?: number;
-  sheetNames?: string[];
-  hasFormulas?: boolean;
-  blankInputRequiredCount?: number;
-  isScannedOrImage?: boolean;
-}
-
-export interface PricingWorkbookLineItem {
-  id: string;
-  itemNumber: string;
-  description: string;
-  quantity?: number | string;
-  unit?: string;
-  unitPrice?: number | string;
-  extendedPrice?: number | string;
-  laborCategory?: string;
-  laborHours?: number | string;
-  laborRate?: number | string;
-  travel?: number | string;
-  materials?: number | string;
-  subcontractorCosts?: number | string;
-  overhead?: string;
-  totalPrice?: number | string;
-  currency?: string;
-  assumptions?: string;
-  formula?: string;
-  isBidderInputRequired?: boolean;
-  isCalculated?: boolean;
-  sheetName: string;
-  sourceCell: string; // e.g. "Pricing_Schedule.xlsx — Labor Rates — Cell D12"
-}
-
-export interface PricingRequiredField {
-  id: string;
-  sheetName: string;
-  cellAddress: string; // e.g. "C14"
-  label: string; // e.g. "Project Manager Hourly Rate"
-  currentValue?: string;
-  status: 'Completed' | 'Missing/Blank' | 'Formula Calculated';
-  isBidderEntered: boolean;
-  isGovernmentPrefilled: boolean;
-  notes?: string;
-  sourceReference: string; // "Pricing_Schedule.xlsx — Labor Rates — Cell C14"
-}
-
-export interface PricingWorkbookReview {
-  hasPricingWorkbook: boolean;
-  workbookName?: string;
-  totalSheets?: number;
-  currency?: string;
-  totalCalculatedValue?: string | number;
-  requiredFields: PricingRequiredField[];
-  completedFieldsCount: number;
-  missingFieldsCount: number; // blank required bidder inputs
-  formulaIssues: {
+  sheetsData?: Array<{
     sheetName: string;
-    cellAddress: string;
-    formula: string;
-    issue: string; // e.g. "#VALUE! error or non-reconciling total"
-  }[];
-  lineItems: PricingWorkbookLineItem[];
-  reconciliationWarning?: string | null;
-  scannedWorkbookWarning?: string | null;
-}
+    rows: Array<Array<string | number>>;
+    headers: string[];
+  }>;
+  textContent?: string;
+  isScanned?: boolean;
+};
 
-export interface AmendmentItem {
+export type RequirementStatus = 'MET' | 'PARTIALLY MET' | 'NOT MET' | 'UNKNOWN' | 'HUMAN REVIEW REQUIRED';
+
+export type ComplianceRequirement = {
   id: string;
-  documentId: string;
-  documentName: string;
+  requirementId: string;
+  requirement: string;
+  category: 'Eligibility' | 'Technical' | 'Management' | 'Staffing' | 'Past Performance' | 'Security' | 'Financial' | 'Formatting & Submission';
+  isMandatory: boolean;
+  status: RequirementStatus;
+  companyEvidence: string;
+  gapAnalysis: string;
+  recommendedAction: string;
+  proposalSection: string;
+  sourceDocument: string;
+  sourcePage: string;
+  sourceSection: string;
+  amendmentStatus?: string;
+  confidence: number; // 0-100
+  isImported?: boolean;
+};
+
+export type AmendmentItem = {
+  id: string;
   amendmentNumber: string;
-  publicationDate?: string;
-  effectiveDate?: string;
+  publicationDate: string;
+  effectiveDate: string;
+  sourceDocument: string;
   requirementsChanged: string[];
-  deadlinesChanged: string[];
+  deadlinesChanged: {
+    label: string;
+    previousDeadline: string;
+    newGoverningDeadline: string;
+  }[];
   formsChanged: string[];
   pricingInstructionsChanged: string[];
   evaluationCriteriaChanged: string[];
   submissionInstructionsChanged: string[];
   newRequirements: string[];
   deletedRequirements: string[];
-  impactSummaryText: string;
-}
+  summary: string;
+};
 
-export interface DocumentConflict {
+export type ConflictItem = {
   id: string;
-  conflictType: 
-    | 'Deadline Mismatch' 
-    | 'Page Limit Change' 
-    | 'Eligibility Rule' 
-    | 'Technical Spec' 
-    | 'Submission Method' 
-    | 'Pricing Instructions' 
-    | 'Certifications' 
-    | 'Evaluation Criteria' 
-    | 'Scope Inconsistency' 
-    | 'Superseded Attachment' 
-    | 'Other';
   issue: string;
   earlierRequirement: string;
-  earlierSource: {
-    documentId: string;
-    documentName: string;
-    pageNumber: string | number;
-    sectionName?: string;
-  };
+  earlierSource: string;
   laterRequirement: string;
-  laterSource: {
-    documentId: string;
-    documentName: string;
-    pageNumber: string | number;
-    sectionName?: string;
-  };
+  laterSource: string;
   recommendedInterpretation: string;
-  confidence: number; // 0-100
-  humanReviewRequired: boolean;
-}
+  confidence: number;
+  needsHumanReview: boolean;
+};
 
-export interface MissingProcurementDocument {
+export type MissingDocumentItem = {
   id: string;
-  documentNameRef: string; // e.g. "Attachment D - Subcontracting Plan Form"
-  whereReferenced: string; // e.g. "Section L.4.2"
-  sourceDocumentName: string;
-  sourcePage: string | number;
-  importance: 'Critical' | 'High' | 'Medium' | 'Low';
-  impactOnAnalysis: string;
-}
-
-export interface SourceCitation {
-  documentId: string;
-  documentName: string;
-  pageNumber: string | number;
-  sectionName?: string;
-  requirementId?: string;
-  sourceExcerpt?: string;
-}
-
-export interface RequirementTraceabilityItem {
-  requirementId: string;
-  requirementText: string;
-  isMandatory: boolean;
+  referencedDocument: string;
   sourceDocument: string;
-  sourcePage: string | number;
-  sourceSection?: string;
-  proposalSectionNumber: string;
-  proposalSectionTitle: string;
-  coverageStatus: 'Addressed' | 'Partially Addressed' | 'Not Addressed';
-}
+  sourcePage: string;
+  importance: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  possibleImpact: string;
+};
 
-export interface RequirementsCoverageSummary {
-  totalMandatoryRequirements: number;
-  requirementsAddressed: number;
-  requirementsPartiallyAddressed: number;
-  requirementsNotAddressed: number;
-  coveragePercentage: number;
-  items: RequirementTraceabilityItem[];
-}
-
-export interface OpportunityAnalysis {
+export type PricingCell = {
   id: string;
-  createdAt: string;
-  opportunityTitle: string;
+  sheetName: string;
+  cellRef: string;
+  rowNumber: number;
+  columnName: string;
+  label: string;
+  value: string | number;
+  formula?: string;
+  isMissingInput: boolean; // [USER INPUT REQUIRED]
+  isRequired: boolean;
+};
+
+export type FitScoreBreakdown = {
+  eligibilityScore: number; // 30%
+  technicalCapabilityScore: number; // 25%
+  technicalMatchScore?: number;
+  pastPerformanceScore: number; // 15%
+  commercialAttractivenessScore: number; // 15%
+  commercialScore?: number;
+  deliveryFeasibilityScore: number; // 15%
+  overallFitScore: number; // Weighted calculation
+};
+
+export type OpportunityAnalysis = {
+  opportunityId: string;
+  title: string;
   issuingOrganization: string;
   solicitationNumber: string;
-  procurementType: 'RFP' | 'RFQ' | 'Grant' | 'Tender' | 'RFI' | 'Solicitation' | 'Other';
-  submissionDeadline: string;
+  procurementType: string;
+  governingSubmissionDeadline: string;
   originalSubmissionDeadline?: string;
   questionsDeadline: string;
-  expectedAwardDate: string;
+  intentToBidDeadline: string;
+  siteVisitDeadline?: string;
   contractValue: string;
   periodOfPerformance: string;
   placeOfPerformance: string;
   contractType: string;
+  analysisCompleteness: 'COMPLETE' | 'MOSTLY COMPLETE' | 'INCOMPLETE' | 'CRITICAL DOCUMENTS MISSING';
+  completenessExplanation: string;
   
-  // Multi-Document Package Metadata
-  documents: OpportunityDocument[];
-  amendments?: AmendmentItem[];
-  conflicts?: DocumentConflict[];
-  potentiallyMissingDocs?: MissingProcurementDocument[];
-  analysisCompleteness?: 'COMPLETE' | 'MOSTLY COMPLETE' | 'INCOMPLETE' | 'CRITICAL DOCUMENTS MISSING';
-  completenessReason?: string;
-  requirementsCoverage?: RequirementsCoverageSummary;
-
-  // Categorized Requirements
-  eligibilityRequirements: string[];
-  mandatoryRequirements: string[];
-  evaluationCriteria: EvaluationCriterion[];
-  technicalRequirements: string[];
-  managementRequirements: string[];
-  staffingRequirements: string[];
-  experienceRequirements: string[];
-  requiredCertifications: string[];
-  securityRequirements: string[];
-  insuranceRequirements: string[];
-  financialRequirements: string[];
-  requiredForms: string[];
-  requiredAttachments: string[];
-  submissionInstructions: string;
-  pageLimits: string;
-  formattingRules: string;
-  pricingInstructions: string;
-  keyContractualClauses: string[];
-  disqualificationRisks: string[];
-  
-  // Pricing & Workbook Analysis
-  pricingWorkbookReview?: PricingWorkbookReview;
-  
-  // Raw summary / overview
-  overviewText: string;
-  specifiedStructure?: string[]; // Volume/Section structure if specified in RFP
-}
-
-export interface EvaluationCriterion {
-  id: string;
-  category: string;
-  weightOrImportance: string;
-  description: string;
-}
-
-export interface ComponentScores {
-  eligibilityAlignment: number; // 0-100
-  technicalCapabilityAlignment: number; // 0-100
-  pastPerformanceAlignment: number; // 0-100
-  commercialAttractiveness: number; // 0-100
-  deliveryFeasibility: number; // 0-100
-}
-
-export interface BidReadinessAnalysis {
-  recommendation: 'GO' | 'CONDITIONAL GO' | 'NO-GO';
-  componentScores: ComponentScores;
-  overallFitScore: number; // Calculated strictly via formula: 0.3*elig + 0.25*tech + 0.15*past + 0.15*comm + 0.15*deliv
-  confidenceScore: number; // 0-100
+  bidRecommendation: 'GO' | 'CONDITIONAL GO' | 'NO-GO';
+  fitScore: FitScoreBreakdown;
+  confidenceScore: number;
   executiveAssessment: string;
-  eligibilityDetermination: string;
-  technicalAlignmentText: string;
-  pastPerformanceAlignmentText: string;
-  deliveryFeasibilityText: string;
-  commercialAttractivenessText: string;
-  complianceRiskText: string;
-  proposalEffortEstimateHours: number;
-  estimatedPrepCostUSD: number;
+  
+  requirements: ComplianceRequirement[];
+  amendments: AmendmentItem[];
+  conflicts: ConflictItem[];
+  missingDocuments: MissingDocumentItem[];
+  pricingFields: PricingCell[];
+  
+  proposalEffortEstimate: string;
+  estimatedPreparationCost: string;
   recommendedBidStrategy: string;
-}
+  disqualificationRisks: string[];
+};
 
-export interface ComplianceItem {
+export type ProposalSection = {
   id: string;
-  requirementId: string;
-  requirement: string;
-  requirementType: 'Mandatory' | 'Optional' | 'Technical' | 'Management' | 'Staffing' | 'Past Performance' | 'Financial/Legal';
-  isMandatory: boolean;
-  sourceSection: string;
-  sourcePage: string;
-  sourceDocument?: string;
-  companyStatus: 'MET' | 'PARTIALLY MET' | 'NOT MET' | 'UNKNOWN' | 'HUMAN REVIEW REQUIRED';
-  evidenceFromProfile: string;
-  gap: string;
-  recommendedAction: string;
-  proposalSectionAddressed: string;
-  amendmentStatus?: 'Original' | 'Amended' | 'New in Amendment' | 'Superseded';
-  confidence?: number;
-  riskLevel?: 'High' | 'Medium' | 'Low';
-  isImportedFromSpreadsheet?: boolean;
-  sourceSheet?: string;
-  sourceCell?: string;
-}
-
-export interface MissingDocumentItem {
-  id: string;
-  documentType: string; // e.g. "ISO 27001 Certification", "Audited Financials", "Signed Form SF-1449"
-  description: string;
-  isMandatory: boolean;
-  status: 'Ready' | 'Missing' | 'Action Required' | 'In Progress';
-  actionNeeded: string;
-}
-
-export interface SubmissionTimeline {
-  questionsDeadline: string;
-  intentToBidDeadline: string;
-  siteVisitDeadline?: string;
-  registrationDeadline?: string;
-  proposalSubmissionDeadline: string;
-  internalReviewDeadline: string;
-  draftCompletionTarget: string;
-  pricingCompletionTarget: string;
-  finalComplianceReviewDate: string;
-  submissionReadinessDate: string;
-}
-
-export interface ProposalSection {
-  id: string;
+  title: string;
   sectionNumber: string;
-  title: string;
-  content: string; // Markdown or HTML content
-  relevantRfpSection: string;
-  relevantSourcePage: string;
-  relevantSourceDocument?: string;
-  sources?: SourceCitation[];
-  requirementIds: string[];
-  isUserModified?: boolean;
-  hasPlaceholders?: boolean;
-  wordCount?: number;
-}
+  content: string;
+  sourceReferences: string[];
+  isSolicitationDefined: boolean;
+  unsupportedClaims: string[];
+  status: 'DRAFT' | 'REVIEWED' | 'COMPLETE' | 'NEEDS INPUT';
+};
 
-export interface ProposalDraft {
-  id: string;
-  opportunityId: string;
-  companyId: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-  sections: ProposalSection[];
-  executiveSummaryText: string;
-  technicalResponseText: string;
-  projectPlan: ProjectPlanPhase[];
-  riskRegister: RiskRegisterItem[];
-  pricingSupport: PricingSupportDetails;
-}
-
-export interface ProjectPlanPhase {
-  id: string;
-  phaseName: string;
-  duration: string;
-  activities: string[];
-  deliverables: string[];
-  dependencies: string[];
-  milestones: string[];
-  responsibilities: string;
-}
-
-export interface RiskRegisterItem {
+export type RiskItem = {
   id: string;
   risk: string;
-  probability: 'High' | 'Medium' | 'Low';
-  impact: 'High' | 'Medium' | 'Low';
-  severity: 'Critical' | 'High' | 'Moderate' | 'Low';
+  probability: 'HIGH' | 'MEDIUM' | 'LOW';
+  impact: 'HIGH' | 'MEDIUM' | 'LOW';
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   mitigation: string;
   contingency: string;
   owner: string;
-}
+};
 
-export interface PricingSupportDetails {
-  pricingStructureRecommendations: string;
-  laborCategories: { category: string; rateEstimate: string; estimatedHours: number }[];
-  estimatedTotalHours: number;
-  costCategories: { category: string; description: string; estimatedCost: string }[];
-  assumptions: string[];
-  pricingChecklist: string[];
-  missingPricingInputs: string[];
-  disclaimer: string;
-}
-
-export interface ProposalAuditFinding {
+export type ProposalData = {
   id: string;
-  severity: 'Critical' | 'High' | 'Medium' | 'Low';
-  category: string;
-  sectionRef: string;
-  issue: string;
-  recommendedAction: string;
-}
+  opportunityId: string;
+  createdDate: string;
+  lastModified: string;
+  sections: ProposalSection[];
+  riskRegister: RiskItem[];
+  projectTimeline: {
+    phase: string;
+    activities: string[];
+    deliverables: string[];
+    milestones: string[];
+    duration: string;
+  }[];
+  pricingNarrative: string;
+};
 
-export interface ProposalAudit {
-  overallReadinessScore: number;
-  readinessGrade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'C' | 'D' | 'F';
-  summaryVerdict: string;
-  scores: {
-    groundingScore: number;
-    complianceCoverageScore: number;
-    placeholderFillScore: number;
-    attachmentReadinessScore: number;
-    toneScore: number;
-    pricingValidationScore: number;
-  };
-  findings: ProposalAuditFinding[];
-}
-
-export interface ProposalReadinessReview {
+export type ReadinessReview = {
   overallScore: number; // 0-100
-  categories: {
-    complianceScore: number;
-    completenessScore: number;
-    technicalStrengthScore: number;
-    evidenceScore: number;
-    clarityScore: number;
-    differentiationScore: number;
-    riskScore: number;
-    submissionReadinessScore: number;
-  };
+  complianceScore: number;
+  completenessScore: number;
+  technicalStrengthScore: number;
+  evidenceScore: number;
+  clarityScore: number;
+  differentiationScore: number;
+  riskScore: number;
+  submissionReadinessScore: number;
   unansweredRequirements: string[];
   unsupportedClaims: string[];
   missingDocuments: string[];
-  missingPricing: string[];
-  contradictoryStatements: string[];
+  missingPricingInputs: string[];
   incompleteSections: string[];
-  pageLimitRisks: string[];
-  disqualificationRisks: string[];
-  actionableRecommendations: string[];
-}
+  disqualificationIssues: string[];
+  keyRecommendations: string[];
+  executiveSummary?: string;
+  categoryScores?: Array<{
+    categoryName: string;
+    score: number;
+    findings: string;
+  }>;
+  disqualificationTraps?: string[];
+  recommendedRemediations?: string[];
+};
 
-export interface AnalysisRecord {
+export type ProposalReadinessReview = ReadinessReview;
+
+export type Opportunity = {
   id: string;
   title: string;
-  clientOrganization: string;
-  dateAnalyzed: string;
-  fitScore: number;
-  recommendation: 'GO' | 'CONDITIONAL GO' | 'NO-GO';
-  proposalStatus: 'Not Started' | 'Draft Generated' | 'In Review' | 'Completed';
-  companyProfile: CompanyProfile;
-  opportunity: OpportunityAnalysis;
-  bidReadiness: BidReadinessAnalysis;
-  complianceMatrix: ComplianceItem[];
-  missingDocuments: MissingDocumentItem[];
-  submissionTimeline: SubmissionTimeline;
-  proposalDraft?: ProposalDraft;
-  readinessReview?: ProposalReadinessReview;
+  issuingOrganization: string;
+  solicitationNumber: string;
+  createdDate?: string;
+  createdAt?: string;
+  currentDeadline?: string;
+  analysisStatus?: 'NOT_STARTED' | 'ANALYZING' | 'ANALYZED' | 'FAILED';
+  proposalStatus?: 'NOT_STARTED' | 'DRAFTING' | 'GENERATED' | 'REVIEWED';
+  documents: OpportunityDocument[];
+  analysis?: OpportunityAnalysis;
+  proposal?: ProposalData;
+  proposalDraft?: ProposalData;
+  readinessReview?: ReadinessReview | ProposalReadinessReview;
   isDemo?: boolean;
-}
+};

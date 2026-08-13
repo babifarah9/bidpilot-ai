@@ -57,16 +57,19 @@ async function startServer() {
   app.post("/api/analyze-opportunity", async (req, res) => {
     try {
       const { title, solicitationNumber, documents, companyProfile } = req.body;
-      if (!title || !documents || !companyProfile) {
-        return res.status(400).json({ error: "Missing required fields for opportunity analysis" });
-      }
+      if (!Array.isArray(documents) || documents.length === 0 || !companyProfile) {
+  return res.status(400).json({
+    success: false,
+    error: "Uploaded documents and company profile are required for opportunity analysis"
+  });
+}
 
       const analysisResult = await analyzeOpportunityPackage(
-        title,
-        solicitationNumber || "TBD",
-        documents,
-        companyProfile
-      );
+  title || "Uploaded Opportunity Package",
+  solicitationNumber || "Not provided",
+  documents,
+  companyProfile
+);
 
       return res.json({
         success: true,
@@ -74,63 +77,13 @@ async function startServer() {
       });
     } catch (error) {
       console.error("Error analyzing opportunity:", error);
-      const { title, solicitationNumber, documents } = req.body;
-      const fallbackAnalysis = {
-        opportunityId: `opp-${Date.now()}`,
-        title: title || 'Analyzed Opportunity Package',
-        issuingOrganization: 'Department of Veterans Affairs',
-        solicitationNumber: solicitationNumber || 'VA-26-00412',
-        procurementType: 'Full and Open Competition',
-        governingSubmissionDeadline: '2026-09-30T17:00:00Z',
-        questionsDeadline: '2026-08-20T12:00:00Z',
-        intentToBidDeadline: '2026-08-28T17:00:00Z',
-        contractValue: '$10,000,000+',
-        periodOfPerformance: '1 Base Year + 4 Option Years',
-        placeOfPerformance: 'CONUS',
-        contractType: 'Firm-Fixed-Price',
-        analysisCompleteness: 'COMPLETE',
-        completenessExplanation: 'Analyzed uploaded document package.',
-        bidRecommendation: 'GO',
-        fitScore: {
-          eligibilityScore: 88,
-          technicalCapabilityScore: 85,
-          pastPerformanceScore: 82,
-          commercialAttractivenessScore: 90,
-          deliveryFeasibilityScore: 86,
-          overallFitScore: 86
-        },
-        confidenceScore: 90,
-        executiveAssessment: 'Package extracted successfully. Capabilities align with solicitation requirements.',
-        requirements: (documents || []).map((doc: any, idx: number) => ({
-          id: `req-${idx + 1}`,
-          requirementId: `REQ-${idx + 1}`,
-          requirement: `Compliance requirement derived from ${doc.filename || 'Solicitation'}`,
-          category: 'Technical',
-          isMandatory: true,
-          status: 'MET',
-          companyEvidence: 'Company capabilities match solicitation criteria.',
-          gapAnalysis: 'No major gaps.',
-          recommendedAction: 'Highlight in Volume I Technical Response.',
-          proposalSection: 'Technical Volume',
-          sourceDocument: doc.filename || 'Main Solicitation',
-          sourcePage: 'Page 1',
-          sourceSection: 'Section C',
-          confidence: 90
-        })),
-        amendments: [],
-        conflicts: [],
-        missingDocuments: [],
-        pricingFields: [],
-        proposalEffortEstimate: '35 Hours',
-        estimatedPreparationCost: '$8,500',
-        recommendedBidStrategy: 'Leverage past performance and automated execution playbooks.',
-        disqualificationRisks: []
-      };
-
-      return res.json({
-        success: true,
-        analysis: fallbackAnalysis
-      });
+      return res.status(500).json({
+  success: false,
+  error:
+    error instanceof Error
+      ? error.message
+      : "Opportunity analysis failed"
+});
     }
   });
 

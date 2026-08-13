@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { GoogleGenAI, Type } from "@google/genai";
 import { CompanyProfile, OpportunityDocument, OpportunityAnalysis, ComplianceRequirement, AmendmentItem, ConflictItem, MissingDocumentItem, FitScoreBreakdown, ProposalData, ReadinessReview, DocumentType } from "../src/types";
 
@@ -101,12 +102,51 @@ PROMPT INJECTION DEFENSE & SAFETY RULES:
 /**
  * Analyzes an opportunity package using Gemini + deterministic logic
  */
+const analysisCache = new Map<string, OpportunityAnalysis>();
+
+function createAnalysisCacheKey(
+  opportunityTitle: string,
+  solicitationNumber: string,
+  documents: OpportunityDocument[],
+  companyProfile: CompanyProfile
+): string {
+  const stableInput = {
+    opportunityTitle: opportunityTitle || "",
+    solicitationNumber: solicitationNumber || "",
+    companyProfile,
+    documents: documents.map((doc) => ({
+      filename: doc.filename,
+      textContent: doc.textContent || "",
+      sheetsData: doc.sheetsData || []
+    }))
+  };
+
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(stableInput))
+    .digest("hex");
+}
+
 export async function analyzeOpportunityPackage(
   opportunityTitle: string,
   solicitationNumber: string,
   documents: OpportunityDocument[],
   companyProfile: CompanyProfile
 ): Promise<OpportunityAnalysis> {
+  const cacheKey = createAnalysisCacheKey(
+    opportunityTitle,
+    solicitationNumber,
+    documents,
+    companyProfile
+  );
+
+  const cachedAnalysis = analysisCache.get(cacheKey);
+
+  if (cachedAnalysis) {
+    console.log("Using cached grounded analysis:", cacheKey.substring(0, 12));
+    return cachedAnalysis;
+  }
+
   const docSummaries = documents.map((doc) => {
     let contentSnippet = doc.textContent || "";
     if (doc.sheetsData && doc.sheetsData.length > 0) {
@@ -288,12 +328,61 @@ Return JSON adhering strictly to the schema.
 
     // DETERMINISTIC FIT SCORE CALCULATION according to strict formula
     // Fit Score = 30% Eligibility + 25% Tech + 15% Past Perf + 15% Commercial + 15% Delivery Feasibility
-    const elig = rawData.eligibilityScore || 80;
-    const tech = rawData.technicalCapabilityScore || 80;
-    const past = rawData.pastPerformanceScore || 80;
-    const comm = rawData.commercialAttractivenessScore || 80;
-    const deliv = rawData.deliveryFeasibilityScore || 80;
+    const scoreStatus = (status: string): number => {
+  switch (status) {
+    case "MET":
+      return 100;
+    case "PARTIALLY MET":
+      return 50;
+    case "NOT MET":
+      return 0;
+    case "UNKNOWN":
+    case "HUMAN REVIEW REQUIRED":
+    default:
+      return 25;
+  }
+};
 
+const requirementScore = (categories: string[]): number => {
+  const matching = (rawData.requirements || []).filter(
+    (r: any) => categories.includes(r.category)
+  );
+
+  if (matching.length === 0) {
+    return 50;
+  }
+
+  const total = matching.reduce(
+    (sum: number, r: any) => sum + scoreStatus(r.status),
+    0
+  );
+
+  return Math.round(total / matching.length);
+};
+
+const elig = requirementScore([
+  "Eligibility",
+  "Security"
+]);
+
+const tech = requirementScore([
+  "Technical",
+  "Management"
+]);
+
+const past = requirementScore([
+  "Past Performance"
+]);
+
+const comm = requirementScore([
+  "Financial",
+  "Formatting & Submission"
+]);
+
+const deliv = requirementScore([
+  "Management",
+  "Staffing"
+]);
     const overallCalculatedFit = Math.round(
       elig * 0.30 +
       tech * 0.25 +
@@ -301,7 +390,29 @@ Return JSON adhering strictly to the schema.
       comm * 0.15 +
       deliv * 0.15
     );
+const mandatoryFailures = (rawData.requirements || []).filter(
+  (r: any) => r.isMandatory === true && r.status === "NOT MET"
+);
 
+const mandatoryUnresolved = (rawData.requirements || []).filter(
+  (r: any) =>
+    r.isMandatory === true &&
+    (r.status === "UNKNOWN" || r.status === "HUMAN REVIEW REQUIRED")
+);
+
+let deterministicRecommendation: "GO" | "CONDITIONAL GO" | "NO-GO";
+
+if (mandatoryFailures.length > 0) {
+  deterministicRecommendation = "NO-GO";
+} else if (mandatoryUnresolved.length > 0) {
+  deterministicRecommendation = "CONDITIONAL GO";
+} else if (overallCalculatedFit >= 80) {
+  deterministicRecommendation = "GO";
+} else if (overallCalculatedFit >= 65) {
+  deterministicRecommendation = "CONDITIONAL GO";
+} else {
+  deterministicRecommendation = "NO-GO";
+}
     const fitScoreBreakdown: FitScoreBreakdown = {
       eligibilityScore: elig,
       technicalCapabilityScore: tech,
@@ -353,18 +464,21 @@ Return JSON adhering strictly to the schema.
       contractType: rawData.contractType || "Firm-Fixed-Price",
       analysisCompleteness: (rawData.analysisCompleteness as any) || "COMPLETE",
       completenessExplanation: rawData.completenessExplanation || "All documents analyzed.",
-      
-      bidRecommendation: (rawData.bidRecommendation as any) || (overallCalculatedFit >= 80 ? "GO" : overallCalculatedFit >= 65 ? "CONDITIONAL GO" : "NO-GO"),
-      fitScore: fitScoreBreakdown,
-      confidenceScore: rawData.confidenceScore || 90,
-      executiveAssessment: rawData.executiveAssessment || "Assessment completed.",
-      
-      requirements: (rawData.requirements || []).map((r: any, idx: number) => ({
+      bidRecommendation: deterministicRecommendation,
+fitScore: fitScoreBreakdown,
+confidenceScore:
+  typeof rawData.confidenceScore === "number"
+    ? rawData.confidenceScore
+    : 0,
+executiveAssessment:
+  rawData.executiveAssessment || "Assessment completed.",
+
+requirements: (rawData.requirements || []).map((r: any, idx: number) => ({
         id: `req-${idx + 1}`,
         requirementId: r.requirementId || `REQ-${idx + 1}`,
         requirement: r.requirement,
         category: r.category || "Technical",
-        isMandatory: r.isMandatory !== false,
+        isMandatory: r.isMandatory === true,
         status: (r.status as any) || "HUMAN REVIEW REQUIRED",
         companyEvidence: r.companyEvidence || "To be verified.",
         gapAnalysis: r.gapAnalysis || "None identified.",
@@ -422,6 +536,9 @@ Return JSON adhering strictly to the schema.
       disqualificationRisks: rawData.disqualificationRisks || []
     };
 
+    analysisCache.set(cacheKey, analysisResult);
+    console.log("Cached grounded analysis:", cacheKey.substring(0, 12));
+
     return analysisResult;
   } catch (error) {
     console.error("Gemini opportunity analysis error:", error);
@@ -468,7 +585,8 @@ Return JSON adhering strictly to the schema.
       model: "gemini-3.6-flash",
       contents: prompt,
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION_ANALYSIS,
+temperature: 0,       
+ systemInstruction: SYSTEM_INSTRUCTION_ANALYSIS,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

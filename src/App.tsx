@@ -54,12 +54,12 @@ export default function App() {
   };
 
   const handleNewOpportunity = () => {
-    setNewTitle('Cloud Modernization & DevSecOps Support');
-    setNewSolicitation('VA-26-00412');
-    setNewIssuingOrg('Department of Veterans Affairs');
-    setNewDocs([]);
-    setActiveTab('upload');
-  };
+  setNewTitle('');
+  setNewSolicitation('');
+  setNewIssuingOrg('');
+  setNewDocs([]);
+  setActiveTab('upload');
+};
 
   const handleStartAnalysis = async () => {
     if (newDocs.length === 0) return;
@@ -91,59 +91,15 @@ export default function App() {
     }
 
     if (!analysisResult) {
-      // Fallback analysis if network or backend fails
-      analysisResult = {
-        opportunityId: `opp-${Date.now()}`,
-        title: newTitle || 'Analyzed Procurement Package',
-        issuingOrganization: newIssuingOrg || 'Issuing Agency',
-        solicitationNumber: newSolicitation || 'SOL-2026-001',
-        procurementType: 'Full and Open Competition',
-        governingSubmissionDeadline: '2026-09-30T17:00:00Z',
-        questionsDeadline: '2026-08-20T12:00:00Z',
-        intentToBidDeadline: '2026-08-28T17:00:00Z',
-        contractValue: '$10,000,000+',
-        periodOfPerformance: '1 Base Year + 4 Option Years',
-        placeOfPerformance: 'CONUS',
-        contractType: 'Firm-Fixed-Price',
-        analysisCompleteness: 'COMPLETE' as const,
-        completenessExplanation: 'Extracted requirements across uploaded opportunity documents.',
-        bidRecommendation: 'GO' as const,
-        fitScore: {
-          eligibilityScore: 88,
-          technicalCapabilityScore: 85,
-          pastPerformanceScore: 82,
-          commercialAttractivenessScore: 90,
-          deliveryFeasibilityScore: 86,
-          overallFitScore: 86
-        },
-        confidenceScore: 92,
-        executiveAssessment: 'Strong technical and past performance match with company profile.',
-        requirements: newDocs.map((doc, idx) => ({
-          id: `req-${idx + 1}`,
-          requirementId: `REQ-${idx + 1}`,
-          requirement: `Compliance requirement derived from ${doc.filename}`,
-          category: 'Technical',
-          isMandatory: true,
-          status: 'MET' as const,
-          companyEvidence: 'Company capabilities match solicitation criteria.',
-          gapAnalysis: 'No critical gaps identified.',
-          recommendedAction: 'Highlight capability in Proposal Volume I.',
-          proposalSection: 'Technical Response',
-          sourceDocument: doc.filename,
-          sourcePage: 'Page 1',
-          sourceSection: 'Section C',
-          confidence: 90
-        })),
-        amendments: [],
-        conflicts: [],
-        missingDocuments: [],
-        pricingFields: [],
-        proposalEffortEstimate: '35 Hours',
-        estimatedPreparationCost: '$8,500',
-        recommendedBidStrategy: 'Leverage incumbent-level experience and cloud automation playbooks.',
-        disqualificationRisks: []
-      };
-    }
+  setIsAnalyzing(false);
+  setActiveTab('upload');
+
+  alert(
+    'Opportunity analysis failed. BidPilot could not obtain a grounded analysis from Gemini. Please try again.'
+  );
+
+  return;
+}
 
     const newOpp: Opportunity = {
       id: `opp-${Date.now()}`,

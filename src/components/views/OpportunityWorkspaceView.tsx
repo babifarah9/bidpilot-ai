@@ -311,9 +311,7 @@ export const OpportunityWorkspaceView: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => {
-                if (!opportunityTitle) setOpportunityTitle("Cloud Modernization & DevSecOps Support");
-                if (!solicitationNumber) setSolicitationNumber("VA-26-00412");
-                if (!issuingOrganization) setIssuingOrganization("Department of Veterans Affairs");
+                
                 setDocuments(DEMO_DOCUMENTS);
               }}
               className="px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs rounded-xl border border-teal-200 transition flex items-center gap-1.5 cursor-pointer"
@@ -478,9 +476,7 @@ export const OpportunityWorkspaceView: React.FC<Props> = ({
           type="button"
           onClick={() => {
             if (documents.length === 0) {
-              if (!opportunityTitle) setOpportunityTitle("Cloud Modernization & DevSecOps Support");
-              if (!solicitationNumber) setSolicitationNumber("VA-26-00412");
-              if (!issuingOrganization) setIssuingOrganization("Department of Veterans Affairs");
+              
               setDocuments(DEMO_DOCUMENTS);
             }
             onStartAnalysis();

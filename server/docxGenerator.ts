@@ -23,7 +23,7 @@ export async function generateDocxBuffer(
       new Paragraph({
         children: [
           new TextRun({ text: 'Solicitation Title: ', bold: true }),
-          new TextRun(opportunity.opportunityTitle),
+          new TextRun(opportunity.title),
         ],
         spacing: { after: 80 }
       }),
@@ -45,6 +45,10 @@ export async function generateDocxBuffer(
   }
 
   if (companyProfile) {
+    const contactName = companyProfile.contactName || 'Proposal Team';
+    const contactEmail = companyProfile.contactEmail || companyProfile.contactInformation?.email || 'N/A';
+    const contactPhone = companyProfile.contactPhone || companyProfile.contactInformation?.phone || 'N/A';
+
     children.push(
       new Paragraph({
         children: [
@@ -56,7 +60,7 @@ export async function generateDocxBuffer(
       new Paragraph({
         children: [
           new TextRun({ text: 'Contact: ', bold: true }),
-          new TextRun(`${companyProfile.contactName} | ${companyProfile.contactEmail} | ${companyProfile.contactPhone}`),
+          new TextRun(`${contactName} | ${contactEmail} | ${contactPhone}`),
         ],
         spacing: { after: 240 }
       })

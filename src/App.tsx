@@ -300,7 +300,7 @@ export default function App() {
         body: JSON.stringify({
           companyProfile,
           analysis: activeOpportunity.analysis,
-          proposalDraft: activeOpportunity.proposalDraft
+          proposal: activeOpportunity.proposalDraft
         })
       });
 
@@ -440,16 +440,17 @@ export default function App() {
               <ComplianceMatrixView requirements={activeOpportunity.analysis.requirements} />
             )}
 
-            {activeTab === 'bid' && activeOpportunity.analysis && (
+            {activeTab === 'bid' && (
               <BidDecisionView
-                analysis={activeOpportunity.analysis}
+                analysis={activeOpportunity?.analysis}
                 onProceedToProposal={() => {
-                  if (!activeOpportunity.proposalDraft) {
+                  if (!activeOpportunity?.proposalDraft) {
                     handleGenerateProposal();
                   } else {
                     setActiveTab('proposal');
                   }
                 }}
+                isAnalyzing={isAnalyzing}
               />
             )}
 
@@ -466,10 +467,18 @@ export default function App() {
               <RequirementCoverageView requirements={activeOpportunity.analysis.requirements} />
             )}
 
-            {activeTab === 'readiness' && activeOpportunity.readinessReview && (
+            {activeTab === 'readiness' && (
               <ReadinessReviewView
-                readinessReview={activeOpportunity.readinessReview}
+                proposal={activeOpportunity?.proposalDraft}
+                readinessReview={activeOpportunity?.readinessReview}
                 onRunReadinessReview={handleRunReadinessReview}
+                onGenerateProposal={() => {
+                  if (!activeOpportunity?.proposalDraft) {
+                    handleGenerateProposal();
+                  } else {
+                    setActiveTab('proposal');
+                  }
+                }}
                 isReviewing={isReviewingReadiness}
               />
             )}

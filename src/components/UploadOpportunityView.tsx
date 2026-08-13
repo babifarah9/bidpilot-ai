@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CompanyProfile, OpportunityDocument, DocumentClassification } from '../types';
+import { CompanyProfile, OpportunityDocument, DocumentType } from '../types';
 import { Upload, FileText, Sparkles, AlertTriangle, Building2, ShieldCheck, Plus, Trash2, FileCode, CheckCircle2, FileStack, Layers, AlertCircle, Info } from 'lucide-react';
 
 interface UploadOpportunityViewProps {
@@ -9,7 +9,7 @@ interface UploadOpportunityViewProps {
   isAnalyzing: boolean;
 }
 
-const DOCUMENT_TYPES: DocumentClassification[] = [
+const DOCUMENT_TYPES: DocumentType[] = [
   'Main Solicitation',
   'Statement of Work',
   'Statement of Objectives',
@@ -37,7 +37,7 @@ export const UploadOpportunityView: React.FC<UploadOpportunityViewProps> = ({
   const [fileList, setFileList] = useState<{ file: File; meta: OpportunityDocument }[]>([]);
   const [pastedText, setPastedText] = useState('');
 
-  const autoClassifyFilename = (filename: string): DocumentClassification => {
+  const autoClassifyFilename = (filename: string): DocumentType => {
     const lower = filename.toLowerCase();
     if (lower.includes('amend') || lower.includes('addendum') || lower.includes('sf30') || lower.includes('mod')) return 'Amendment';
     if (lower.includes('sow') || lower.includes('statement_of_work') || lower.includes('pws') || lower.includes('soo')) return 'Statement of Work';
@@ -56,14 +56,14 @@ export const UploadOpportunityView: React.FC<UploadOpportunityViewProps> = ({
       const meta: OpportunityDocument = {
         id: `uploaded-${Date.now()}-${idx}`,
         filename: file.name,
-        type,
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-        status: 'Processed',
-        priority: isAmend ? 'High' : 'Medium',
+        fileType: (file.name.split('.').pop()?.toLowerCase() || 'pdf') as any,
+        classification: type,
+        fileSize: file.size,
+        uploadDate: new Date().toISOString(),
+        processingStatus: 'COMPLETED',
+        priority: isAmend ? 'HIGH' : 'MEDIUM',
         version: isAmend ? '1.1' : '1.0',
-        amendmentNumber: isAmend ? '01' : undefined,
-        versionStatus: 'Current'
+        amendmentNumber: isAmend ? '01' : undefined
       };
       return { file, meta };
     });
@@ -262,8 +262,8 @@ export const UploadOpportunityView: React.FC<UploadOpportunityViewProps> = ({
                       <div className="flex flex-col">
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Document Role</label>
                         <select
-                          value={item.meta.type}
-                          onChange={e => updateMeta(idx, { type: e.target.value as DocumentClassification })}
+                          value={item.meta.classification}
+                          onChange={e => updateMeta(idx, { classification: e.target.value as DocumentType })}
                           className="text-xs font-semibold bg-slate-100 border border-slate-200 rounded px-2.5 py-1 text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500"
                         >
                           {DOCUMENT_TYPES.map(dt => (
@@ -272,7 +272,7 @@ export const UploadOpportunityView: React.FC<UploadOpportunityViewProps> = ({
                         </select>
                       </div>
 
-                      {item.meta.type === 'Amendment' && (
+                      {item.meta.classification === 'Amendment' && (
                         <div className="flex flex-col">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Amd #</label>
                           <input

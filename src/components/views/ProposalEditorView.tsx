@@ -224,19 +224,30 @@ export const ProposalEditorView: React.FC<Props> = ({
                   </div>
                 )}
               </div>
+             {/* Source References */}
+<div className="pt-4 border-t border-slate-200 mt-6">
+  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+    Source References
+  </span>
 
-              {/* Requirement Compliance Tags */}
-              <div className="pt-4 border-t border-slate-200 mt-6">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Addressing Requirements</span>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {activeSection.requirementsAddressed.map((reqId, idx) => (
-                    <span key={idx} className="px-2 py-0.5 bg-teal-50 text-teal-800 font-mono text-[10px] font-bold rounded border border-teal-200">
-                      {reqId}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </>
+  {(activeSection.sourceReferences ?? []).length > 0 ? (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {(activeSection.sourceReferences ?? []).map((ref, idx) => (
+        <span
+          key={idx}
+          className="px-2 py-0.5 bg-teal-50 text-teal-800 font-mono text-[10px] font-bold rounded border border-teal-200"
+        >
+          {ref}
+        </span>
+      ))}
+    </div>
+  ) : (
+    <p className="text-xs text-slate-500 mt-2">
+      No source references were returned for this section.
+    </p>
+  )}
+</div>
+             </>
           ) : (
             <div className="p-8 text-center text-slate-400 text-xs">Select a proposal section from the left outline.</div>
           )}
@@ -254,7 +265,7 @@ export const ProposalEditorView: React.FC<Props> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
-                <th className="p-3">Risk Category</th>
+                <th className="p-3">Severity</th>
                 <th className="p-3">Identified Threat</th>
                 <th className="p-3">Likelihood</th>
                 <th className="p-3">Impact</th>
@@ -262,15 +273,25 @@ export const ProposalEditorView: React.FC<Props> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {proposal.riskRegister.map((risk) => (
-                <tr key={risk.id} className="hover:bg-slate-50 transition">
-                  <td className="p-3 font-bold text-slate-900">{risk.category}</td>
-                  <td className="p-3 text-slate-700">{risk.riskDescription}</td>
-                  <td className="p-3 font-bold text-slate-600">{risk.likelihood}</td>
-                  <td className="p-3 font-bold text-amber-700">{risk.impact}</td>
-                  <td className="p-3 text-teal-900 font-medium bg-teal-50/50 p-2 rounded">{risk.mitigationStrategy}</td>
-                </tr>
-              ))}
+              {(proposal.riskRegister ?? []).map((risk) => (
+    <tr key={risk.id} className="hover:bg-slate-50 transition">
+      <td className="p-3 font-bold text-slate-900">
+        {risk.severity ?? "MEDIUM"}
+      </td>
+      <td className="p-3 text-slate-700">
+        {risk.risk || "Risk description not provided"}
+      </td>
+      <td className="p-3 font-bold text-slate-600">
+        {risk.probability ?? "MEDIUM"}
+      </td>
+      <td className="p-3 font-bold text-amber-700">
+        {risk.impact ?? "MEDIUM"}
+      </td>
+      <td className="p-3 text-teal-900 font-medium bg-teal-50/50">
+        {risk.mitigation || "Mitigation not provided"}
+      </td>
+    </tr>
+  ))}
             </tbody>
           </table>
         </div>
@@ -293,13 +314,29 @@ export const ProposalEditorView: React.FC<Props> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {proposal.projectTimeline.map((item) => (
-                <tr key={item.phase} className="hover:bg-slate-50 transition">
-                  <td className="p-3 font-bold text-slate-900">{item.phase}</td>
-                  <td className="p-3 text-teal-700 font-semibold">{item.duration}</td>
-                  <td className="p-3 text-slate-700">{item.deliverable}</td>
-                </tr>
-              ))}
+              {(proposal.projectTimeline ?? []).map((item, idx) => (
+    <tr key={`${item.phase}-${idx}`} className="hover:bg-slate-50 transition">
+      <td className="p-3 font-bold text-slate-900">
+        {item.phase || `Phase ${idx + 1}`}
+      </td>
+      <td className="p-3 text-teal-700 font-semibold">
+        {item.duration || "Not specified"}
+      </td>
+      <td className="p-3 text-slate-700">
+        {(item.deliverables ?? []).length > 0 ? (
+          <ul className="list-disc pl-4 space-y-1">
+            {(item.deliverables ?? []).map((deliverable, deliverableIdx) => (
+              <li key={deliverableIdx}>{deliverable}</li>
+            ))}
+          </ul>
+        ) : (
+          <span className="text-slate-400">
+            No deliverables provided
+          </span>
+        )}
+      </td>
+    </tr>
+  ))}
             </tbody>
           </table>
         </div>

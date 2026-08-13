@@ -39,6 +39,9 @@ export type CompanyProfile = {
     website: string;
     address: string;
   };
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
 };
 
 export type DocumentType =
@@ -50,6 +53,7 @@ export type DocumentType =
   | 'Amendment'
   | 'Addendum'
   | 'Questions and Answers'
+  | 'Q&A Response'
   | 'Statement of Work'
   | 'Statement of Objectives'
   | 'Performance Work Statement'
@@ -58,6 +62,7 @@ export type DocumentType =
   | 'Pricing Schedule'
   | 'Cost Workbook'
   | 'Bill of Quantities'
+  | 'Bid Form'
   | 'Compliance Matrix'
   | 'Staffing Plan'
   | 'Deliverables Schedule'
@@ -65,6 +70,7 @@ export type DocumentType =
   | 'Financial Template'
   | 'Required Form'
   | 'Contract Terms'
+  | 'Contract Clause'
   | 'Security Requirements'
   | 'Evaluation Criteria'
   | 'Submission Instructions'
@@ -92,6 +98,7 @@ export type OpportunityDocument = {
   }>;
   textContent?: string;
   isScanned?: boolean;
+  isSpreadsheet?: boolean;
 };
 
 export type RequirementStatus = 'MET' | 'PARTIALLY MET' | 'NOT MET' | 'UNKNOWN' | 'HUMAN REVIEW REQUIRED';
@@ -170,6 +177,51 @@ export type PricingCell = {
   isRequired: boolean;
 };
 
+export type PricingRequiredField = {
+  id: string;
+  sheetName: string;
+  cellAddress: string;
+  label: string;
+  currentValue: string;
+  status: string;
+  isBidderEntered: boolean;
+  isGovernmentPrefilled: boolean;
+  notes?: string;
+  sourceReference: string;
+};
+
+export type PricingWorkbookLineItem = {
+  id: string;
+  clinOrRow: string;
+  itemNumber?: string;
+  laborCategory?: string;
+  description: string;
+  quantity?: number;
+  unitOfIssue?: string;
+  unit?: string;
+  unitPrice?: number;
+  extendedPrice?: number | string;
+  totalPrice?: number;
+  sheetName: string;
+  formula?: string;
+  sourceCell?: string;
+};
+
+export type PricingWorkbookReview = {
+  hasPricingWorkbook: boolean;
+  workbookName?: string;
+  totalSheets?: number;
+  currency?: string;
+  totalCalculatedValue?: number | string;
+  requiredFields: PricingRequiredField[];
+  completedFieldsCount: number;
+  missingFieldsCount: number;
+  formulaIssues: { sheetName: string; cellAddress: string; formula: string; issue: string }[];
+  lineItems: PricingWorkbookLineItem[];
+  reconciliationWarning?: string | null;
+  scannedWorkbookWarning?: string | null;
+};
+
 export type FitScoreBreakdown = {
   eligibilityScore: number; // 30%
   technicalCapabilityScore: number; // 25%
@@ -179,6 +231,8 @@ export type FitScoreBreakdown = {
   commercialScore?: number;
   deliveryFeasibilityScore: number; // 15%
   overallFitScore: number; // Weighted calculation
+  strengths?: string[];
+  gaps?: string[];
 };
 
 export type OpportunityAnalysis = {
@@ -209,6 +263,8 @@ export type OpportunityAnalysis = {
   conflicts: ConflictItem[];
   missingDocuments: MissingDocumentItem[];
   pricingFields: PricingCell[];
+  pricingWorkbookReview?: PricingWorkbookReview;
+  documents?: OpportunityDocument[];
   
   proposalEffortEstimate: string;
   estimatedPreparationCost: string;
@@ -225,6 +281,8 @@ export type ProposalSection = {
   isSolicitationDefined: boolean;
   unsupportedClaims: string[];
   status: 'DRAFT' | 'REVIEWED' | 'COMPLETE' | 'NEEDS INPUT';
+  relevantRfpSection?: string;
+  relevantSourcePage?: string;
 };
 
 export type RiskItem = {
@@ -243,6 +301,8 @@ export type ProposalData = {
   opportunityId: string;
   createdDate: string;
   lastModified: string;
+  title?: string;
+  executiveSummaryText?: string;
   sections: ProposalSection[];
   riskRegister: RiskItem[];
   projectTimeline: {
@@ -253,6 +313,9 @@ export type ProposalData = {
     duration: string;
   }[];
   pricingNarrative: string;
+  pricingSupport?: {
+    laborCategories?: { category: string; rateEstimate: string; estimatedHours: number }[];
+  };
 };
 
 export type ReadinessReview = {
@@ -301,3 +364,64 @@ export type Opportunity = {
   readinessReview?: ReadinessReview | ProposalReadinessReview;
   isDemo?: boolean;
 };
+
+// --- Backward-Compatibility Aliases ---
+export type ProposalDraft = ProposalData;
+export type ComplianceItem = ComplianceRequirement;
+export type PastPerformanceItem = {
+  id?: string;
+  client?: string;
+  clientName?: string;
+  projectTitle: string;
+  contractValue: string;
+  duration?: string;
+  periodOfPerformance?: string;
+  description?: string;
+  relevance: string;
+  keyResults?: string;
+};
+export type KeyPersonnelItem = {
+  id?: string;
+  name: string;
+  role: string;
+  yearsExperience: number;
+  clearance?: string;
+  securityClearance?: string;
+  certifications: string[] | string;
+  education?: string;
+  bio?: string;
+};
+export type DocumentConflict = ConflictItem;
+export type MissingProcurementDocument = MissingDocumentItem;
+export type AnalysisRecord = OpportunityAnalysis;
+export type ProposalAudit = ProposalReadinessReview;
+export type DocumentClassification = DocumentType;
+export type RiskRegisterItem = RiskItem;
+
+export type BidReadinessAnalysis = {
+  recommendation: 'GO' | 'CONDITIONAL GO' | 'NO-GO';
+  executiveAssessment: string;
+  confidenceScore: number;
+  proposalEffortEstimateHours: number;
+  estimatedPrepCostUSD: number;
+  overallFitScore: number;
+  componentScores: {
+    eligibilityAlignment: number;
+    technicalCapabilityAlignment: number;
+    pastPerformanceAlignment: number;
+    commercialAttractiveness: number;
+    deliveryFeasibility: number;
+  };
+  eligibilityDetermination: string;
+  technicalAlignmentText: string;
+  pastPerformanceAlignmentText: string;
+  deliveryFeasibilityText: string;
+};
+
+export type SubmissionTimeline = {
+  questionsDeadline: string;
+  draftCompletionTarget: string;
+  pricingCompletionTarget: string;
+  proposalSubmissionDeadline: string;
+};
+

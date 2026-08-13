@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -6,7 +7,7 @@ import { analyzeOpportunityPackage, generateFullProposalDraft, runProposalReadin
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;;
 
   // Body parsers with high limit for document uploads
   app.use(express.json({ limit: "50mb" }));

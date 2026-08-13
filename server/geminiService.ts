@@ -551,7 +551,13 @@ Return JSON adhering strictly to the schema.
         contingency: r.contingency,
         owner: r.owner || "Proposal Lead"
       })),
-      projectTimeline: rawData.projectTimeline || [],
+      projectTimeline: (rawData.projectTimeline || []).map((item: any, idx: number) => ({
+  phase: item.phase || `Phase ${idx + 1}`,
+  duration: item.duration || "Not specified",
+  activities: Array.isArray(item.activities) ? item.activities : [],
+  deliverables: Array.isArray(item.deliverables) ? item.deliverables : [],
+  milestones: Array.isArray(item.milestones) ? item.milestones : []
+})),
       pricingNarrative: rawData.pricingNarrative || "Pricing submitted separately in Volume IV."
     };
   } catch (error) {

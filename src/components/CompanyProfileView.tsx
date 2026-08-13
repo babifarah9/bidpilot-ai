@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CompanyProfile, PastPerformanceItem, KeyPersonnelItem } from '../types';
-import { SAMPLE_COMPANY_PROFILE } from '../data/demoData';
+import { DEMO_COMPANY_PROFILE } from '../data/demoData';
 import { Building2, Save, Sparkles, Plus, Trash2, CheckCircle, ShieldAlert } from 'lucide-react';
 
 interface CompanyProfileViewProps {
@@ -27,7 +27,7 @@ export const CompanyProfileView: React.FC<CompanyProfileViewProps> = ({
   };
 
   const handleLoadSample = () => {
-    setProfile(SAMPLE_COMPANY_PROFILE);
+    setProfile(DEMO_COMPANY_PROFILE);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };

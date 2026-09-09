@@ -1,10 +1,10 @@
 import React from 'react';
 import { Opportunity } from '../../types';
+import { VoiceVerificationPanel } from './VoiceVerificationPanel';
 import { 
   CheckCircle2, 
   AlertTriangle, 
   XCircle, 
-  Calendar, 
   Clock, 
   FileText, 
   GitCompare, 
@@ -42,7 +42,6 @@ export const DashboardView: React.FC<Props> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-      {/* Demo Banner if Demo */}
       {opportunity.isDemo && (
         <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-900 font-semibold text-xs flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -55,12 +54,10 @@ export const DashboardView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Main Hero Summary Card */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-xl relative overflow-hidden">
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              {/* GO / CONDITIONAL GO / NO-GO BADGE */}
               <div className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs uppercase tracking-wider ${
                 analysis.bidRecommendation === 'GO' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' :
                 analysis.bidRecommendation === 'CONDITIONAL GO' ? 'bg-amber-400 text-slate-950' :
@@ -98,7 +95,6 @@ export const DashboardView: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Right Action Box */}
           <div className="shrink-0 bg-slate-800/90 p-5 rounded-2xl border border-slate-700/80 text-center w-full lg:w-72">
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Overall Fit Score</div>
             <div className="text-4xl font-black text-teal-400 my-1">{fit.overallFitScore}<span className="text-lg font-normal text-slate-400">/100</span></div>
@@ -116,7 +112,6 @@ export const DashboardView: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Governing Deadlines Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
@@ -165,7 +160,6 @@ export const DashboardView: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Executive Assessment & Disqualification Risks */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -184,7 +178,6 @@ export const DashboardView: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Disqualification Risks */}
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-rose-600" />
@@ -211,7 +204,8 @@ export const DashboardView: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Quick Navigation Cards */}
+      <VoiceVerificationPanel opportunity={opportunity} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
           onClick={() => onNavigateToTab('amendments')}

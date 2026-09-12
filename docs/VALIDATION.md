@@ -21,3 +21,9 @@ The original known lint issues are absent from this branch. Existing document/ex
 The provider documentation site timed out, so payload shapes, terminal vocabulary, and confidence scale still require the one authorized live acceptance test. In-memory request/call tracking is limited to one process lifetime. A separate Render service must remain single-instance during the demo, and any restart requires checking the provider dashboard before a new call. Prompt restrictions are not a provider-level guarantee against model mistakes.
 
 See RELEASE.md for setup, real-response acceptance, and the remaining gates. See DEMO.md for the timed narration and instructions to replace simulated footage.
+
+## Live timeout investigation
+
+Render logged a creation failure at 2026-09-12 15:52:53 UTC after the user reported an abort timeout. The previous backend request deadline was 15 seconds; creation now allows 60 seconds and the browser allows 75 seconds. Timeout errors explicitly warn that acceptance is unknown. No automatic redial is added. Do not deploy this update until the existing operation is reconciled: a restart loses in-memory tracking.
+
+CALL-E documentation is now reachable: https://docs.heycall-e.com/calls. It confirms recipient-level structured_result, the supported top-level status values, and recovery by an unchanged original request plus the same idempotency key. It provides no GET /v1/calls list endpoint. Current code retains failed request promises, so same-tab retries return the recorded failure rather than replaying upstream. Check provider history before deciding the recovery path; do not generate a replacement key blindly.

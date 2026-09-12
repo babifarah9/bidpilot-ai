@@ -62,7 +62,7 @@ async function calleFetch(endpoint: string, init?: RequestInit) {
   const apiKey = requireCalleKey();
   const response = await fetch(`${CALLE_BASE_URL}${endpoint}`, {
     ...init,
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(init?.method === "POST" ? 60000 : 15000),
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
@@ -290,9 +290,12 @@ async function startServer() {
       requests.set(requestId, { body: bodyFingerprint, result: pending });
       return res.status(202).json(await pending);
     } catch (error) {
-      console.error("CALL-E verification failed; inspect provider dashboard.");
-      return res.status(500).json({
-        error: error instanceof Error ? error.message : "CALL-E verification failed"
+      const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+      console.error("CALL-E verification failed", { kind: timedOut ? "timeout" : "upstream_error" });
+      return res.status(timedOut ? 504 : 500).json({
+        error: timedOut
+          ? "CALL-E did not respond within 60 seconds. The call may already exist. Keep this tab open and check CALL-E call history before any new attempt."
+          : error instanceof Error ? error.message : "CALL-E verification failed"
       });
     }
   });

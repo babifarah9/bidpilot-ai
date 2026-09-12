@@ -140,7 +140,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
       const response = await fetch('/api/calle/verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-BidPilot-Token': accessToken },
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(75000),
         body: JSON.stringify({
           requestId: requestId.current,
           opportunityId: opportunity.id,
@@ -162,7 +162,9 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
       setCallResult(data.call || { id, status: 'queued' });
       setAuthorized(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'CALL-E verification could not be started');
+      setError(err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
+        ? 'The request timed out. The call may already exist. Keep this tab open and check CALL-E call history before any new attempt.'
+        : err instanceof Error ? err.message : 'CALL-E verification could not be started');
     } finally {
       starting.current = false;
       setIsStarting(false);

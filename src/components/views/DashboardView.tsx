@@ -204,7 +204,7 @@ export const DashboardView: React.FC<Props> = ({
         </div>
       </div>
 
-      <VoiceVerificationPanel opportunity={opportunity} />
+      <VoiceVerificationPanel key={opportunity.id} opportunity={opportunity} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <button

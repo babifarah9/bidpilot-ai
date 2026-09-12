@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import path from "path";
+import { timingSafeEqual } from "node:crypto";
 import { createServer as createViteServer } from "vite";
 import { parseDocumentBuffer } from "./server/documentParser";
 import { analyzeOpportunityPackage, generateFullProposalDraft, runProposalReadinessReview } from "./server/geminiService";
@@ -61,6 +62,7 @@ async function calleFetch(endpoint: string, init?: RequestInit) {
   const apiKey = requireCalleKey();
   const response = await fetch(`${CALLE_BASE_URL}${endpoint}`, {
     ...init,
+    signal: AbortSignal.timeout(15000),
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
@@ -77,8 +79,7 @@ async function calleFetch(endpoint: string, init?: RequestInit) {
   }
 
   if (!response.ok) {
-    const detail = data?.detail || data?.message || data?.error || `CALL-E API returned ${response.status}`;
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    throw new Error(`CALL-E API returned HTTP ${response.status}. Check the provider dashboard before retrying.`);
   }
 
   return data;
@@ -196,10 +197,23 @@ async function startServer() {
     }
   });
 
+  // A separate operator secret protects the paid-call endpoints; never use CALLE_API_KEY here.
+  app.use("/api/calle", (req, res, next) => {
+    const expected = process.env.CALLE_OPERATOR_TOKEN;
+    if (!expected || expected.length < 24) return res.status(503).json({ error: "Configure a demo operator token of at least 24 characters on the server." });
+    const supplied = req.header("X-BidPilot-Token") || "";
+    if (Buffer.byteLength(supplied) !== Buffer.byteLength(expected) || !timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) return res.status(401).json({ error: "A valid demo operator token is required." });
+    res.setHeader("Cache-Control", "no-store");
+    next();
+  });
+  // Retain ambiguous requests too: never automatically create a replacement call.
+  const requests = new Map<string, { body: string; result: Promise<any> }>();
+  const knownCalls = new Set<string>();
   // CALL-E hackathon: authorized supplier/provider fact verification.
   app.post("/api/calle/verification", async (req, res) => {
     try {
       const {
+        requestId,
         opportunityId,
         solicitationNumber,
         supplierName,
@@ -212,12 +226,22 @@ async function startServer() {
       if (authorized !== true) {
         return res.status(400).json({ error: "Explicit call authorization is required." });
       }
-      if (!supplierName || !questions || !/^\+[1-9]\d{7,14}$/.test(String(phone || ""))) {
+      if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) return res.status(400).json({ error: "A stable request UUID is required." });
+      if (typeof supplierName !== "string" || !supplierName.trim() || supplierName.length > 200 || typeof questions !== "string" || !questions.trim() || questions.length > 3000 || typeof phone !== "string" || !/^\+[1-9]\d{7,14}$/.test(phone) || typeof region !== "string" || !/^[A-Z]{2}$/.test(region)) {
         return res.status(400).json({
           error: "Supplier name, verification questions, and a valid E.164 phone number are required."
         });
       }
 
+      const allowedPhones = (process.env.CALLE_ALLOWED_PHONES || "").split(",").map(p => p.trim()).filter(Boolean);
+      if (!allowedPhones.includes(phone)) return res.status(403).json({ error: "This number is not configured as an authorized demo recipient." });
+      const bodyFingerprint = JSON.stringify(req.body);
+      const previous = requests.get(requestId);
+      if (previous) {
+        if (previous.body !== bodyFingerprint) return res.status(409).json({ error: "This request ID belongs to different call details." });
+        return res.status(202).json(await previous.result);
+      }
+      if (requests.size >= 1) return res.status(409).json({ error: "The one-call demo budget is used. Check the provider dashboard before an operator resets the demo server." });
       const task = [
         `Call ${supplierName} at ${phone} for procurement fact verification.`,
         "At the beginning, identify yourself as an AI calling on behalf of BidPilot for procurement verification.",
@@ -229,10 +253,10 @@ async function startServer() {
         "If the recipient does not know, record the answer as unknown rather than inferring it."
       ].join("\n");
 
-      const call = await calleFetch("/v1/calls", {
+      const pending = calleFetch("/v1/calls", {
         method: "POST",
         headers: {
-          "Idempotency-Key": `bidpilot_${String(opportunityId || "opp")}_${Date.now()}`
+          "Idempotency-Key": `bidpilot_${requestId}`
         },
         body: JSON.stringify({
           task,
@@ -257,15 +281,16 @@ async function startServer() {
             solicitation_number: String(solicitationNumber || "")
           }
         })
+      }).then(call => {
+        const callId = call.id || call.call_id;
+        if (typeof callId !== "string" || !callId) throw new Error("CALL-E returned no call ID. Check the provider dashboard; do not start another call.");
+        knownCalls.add(callId);
+        return { success: true, callId, call };
       });
-
-      return res.status(202).json({
-        success: true,
-        callId: call.id || call.call_id,
-        call
-      });
+      requests.set(requestId, { body: bodyFingerprint, result: pending });
+      return res.status(202).json(await pending);
     } catch (error) {
-      console.error("CALL-E verification error:", error);
+      console.error("CALL-E verification failed; inspect provider dashboard.");
       return res.status(500).json({
         error: error instanceof Error ? error.message : "CALL-E verification failed"
       });
@@ -274,11 +299,12 @@ async function startServer() {
 
   app.get("/api/calle/verification/:callId", async (req, res) => {
     try {
+      if (!knownCalls.has(req.params.callId)) return res.status(404).json({ error: "Call not found in this demo session. After a restart, use the provider dashboard." });
       const callId = encodeURIComponent(req.params.callId);
       const call = await calleFetch(`/v1/calls/${callId}`);
       return res.json({ success: true, call });
     } catch (error) {
-      console.error("CALL-E result error:", error);
+      console.error("CALL-E result retrieval failed.");
       return res.status(500).json({
         error: error instanceof Error ? error.message : "Unable to retrieve CALL-E result"
       });

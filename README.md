@@ -14,7 +14,7 @@ BidPilot AI analyzes procurement packages, identifies compliance gaps and bid ri
 6. CALL-E identifies itself as an AI calling for procurement verification and asks only the approved business questions.
 7. BidPilot polls the CALL-E result and renders structured evidence such as availability, lead time, coverage, certifications, indicative pricing, and whether human follow-up is required.
 
-The CALL-E key and target phone number are never exposed as frontend configuration. Calls are intentionally constrained so the agent cannot make purchases, negotiate binding terms, make commitments, or request sensitive personal information.
+The CALL-E API key remains server-side. The operator enters the recipient phone number in the browser; it is sent to the backend and CALL-E. Calls are intentionally constrained so the agent cannot make purchases, negotiate binding terms, make commitments, or request sensitive personal information.
 
 ## Architecture
 
@@ -93,3 +93,7 @@ BidPilot Voice requires an explicit authorization checkbox before the backend wi
 ## Existing BidPilot capabilities
 
 The broader application includes document parsing, procurement analysis, amendment/conflict review, compliance matrices, pricing review, bid scoring, proposal drafting, requirement coverage, and readiness review.
+
+## Completion package
+
+See [local validation and isolated Render setup](docs/RELEASE.md) and the [narrated demo script](docs/DEMO.md). The included recording is a labeled local simulation, not proof of a live CALL-E call.

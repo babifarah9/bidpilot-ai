@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Loader2,
@@ -27,7 +27,7 @@ type CallResult = {
   }>;
 };
 
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'canceled']);
+export const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'canceled']);
 
 const supportedRegions = [
   ['CA', 'Canada'],
@@ -57,6 +57,10 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
     ].join('\n');
   }, [analysis]);
 
+  const [accessToken, setAccessToken] = useState('');
+  const requestId = useRef(crypto.randomUUID());
+  const starting = useRef(false);
+  const [pollVersion, setPollVersion] = useState(0);
   const [supplierName, setSupplierName] = useState('');
   const [phone, setPhone] = useState('');
   const [region, setRegion] = useState('CA');
@@ -69,17 +73,24 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
 
   useEffect(() => {
     setQuestions(defaultQuestions);
+    setAuthorized(false);
+    setCallId('');
+    setCallResult(null);
+    requestId.current = crypto.randomUUID();
   }, [defaultQuestions]);
+
+  useEffect(() => { setAuthorized(false); }, [supplierName, phone, region, questions]);
 
   useEffect(() => {
     if (!callId) return;
 
     let cancelled = false;
     let timer: number | undefined;
+    const startedAt = Date.now();
 
     const poll = async () => {
       try {
-        const response = await fetch(`/api/calle/verification/${encodeURIComponent(callId)}`);
+        const response = await fetch(`/api/calle/verification/${encodeURIComponent(callId)}`, { headers: { 'X-BidPilot-Token': accessToken }, signal: AbortSignal.timeout(15000) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Unable to read CALL-E result');
         if (cancelled) return;
@@ -89,6 +100,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
 
         const status = String(result?.status || '').toLowerCase();
         if (!TERMINAL_STATUSES.has(status)) {
+          if (Date.now() - startedAt > 180000) throw new Error('Monitoring paused after three minutes. Resume status checking; do not place another call.');
           timer = window.setTimeout(poll, 3000);
         }
       } catch (err) {
@@ -103,11 +115,11 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [callId]);
+  }, [callId, accessToken, pollVersion]);
 
   const startVerification = async () => {
+    if (starting.current) return;
     setError('');
-    setCallResult(null);
 
     if (!authorized) {
       setError('Confirm that you are authorized to place this business call.');
@@ -122,12 +134,15 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
       return;
     }
 
+    starting.current = true;
     setIsStarting(true);
     try {
       const response = await fetch('/api/calle/verification', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-BidPilot-Token': accessToken },
+        signal: AbortSignal.timeout(20000),
         body: JSON.stringify({
+          requestId: requestId.current,
           opportunityId: opportunity.id,
           solicitationNumber: analysis?.solicitationNumber || opportunity.solicitationNumber,
           supplierName: supplierName.trim(),
@@ -145,14 +160,16 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
       if (!id) throw new Error('CALL-E did not return a call ID');
       setCallId(id);
       setCallResult(data.call || { id, status: 'queued' });
+      setAuthorized(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'CALL-E verification could not be started');
     } finally {
+      starting.current = false;
       setIsStarting(false);
     }
   };
 
-  const structured = callResult?.structured_result || callResult?.recipients?.[0]?.structured_result;
+  const structured = callResult?.recipients?.[0]?.structured_result;
   const status = String(callResult?.status || (callId ? 'queued' : 'not started'));
   const confidence = typeof callResult?.completion_confidence === 'number'
     ? callResult.completion_confidence
@@ -183,6 +200,11 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-0">
         <div className="p-6 sm:p-8 space-y-4 border-b xl:border-b-0 xl:border-r border-white/10">
+          <label className="space-y-1 block">
+            <span className="text-xs font-bold text-slate-300">Demo operator token</span>
+            <input type="password" autoComplete="off" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm" />
+          </label>
+          <fieldset disabled={isStarting || !!callId} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="space-y-1">
               <span className="text-xs font-bold text-slate-300">Supplier / provider</span>
@@ -237,6 +259,8 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
             </span>
           </label>
 
+          </fieldset>
+
           {error && (
             <div className="flex items-start gap-2 rounded-xl bg-rose-500/10 border border-rose-400/30 p-3 text-xs text-rose-200">
               <TriangleAlert className="w-4 h-4 shrink-0" />
@@ -247,23 +271,25 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
           <button
             type="button"
             onClick={startVerification}
-            disabled={isStarting || (callId !== '' && !TERMINAL_STATUSES.has(status.toLowerCase()))}
+            disabled={isStarting || !authorized || !accessToken || callId !== ''}
             className="w-full rounded-xl bg-teal-400 hover:bg-teal-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black py-3 flex items-center justify-center gap-2 transition"
           >
             {isStarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneCall className="w-4 h-4" />}
             {isStarting ? 'Starting CALL-E…' : 'Authorize & Start Verification Call'}
           </button>
+          {callId && <button type="button" onClick={() => { setError(''); setPollVersion(v => v + 1); }} className="text-sm underline">Refresh call status (no new call)</button>}
+          {callId && TERMINAL_STATUSES.has(status.toLowerCase()) && <button type="button" onClick={() => { setCallId(''); setCallResult(null); setAuthorized(false); requestId.current = crypto.randomUUID(); }} className="ml-4 text-sm underline">Prepare a new verification</button>}
         </div>
 
         <div className="p-6 sm:p-8 space-y-5">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-teal-300" />
-            <h3 className="font-bold">Structured evidence returned to BidPilot</h3>
+            <h3 className="font-bold">Supplier-reported evidence returned to BidPilot</h3>
           </div>
 
           {!structured && (
             <div className="rounded-2xl border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
-              The verified supplier facts will appear here after the call completes. No CALL-E key or phone number is exposed to the browser.
+              {TERMINAL_STATUSES.has(status.toLowerCase()) ? 'This call ended without structured supplier facts. Human follow-up is required.' : 'Supplier-reported facts will appear here when returned by CALL-E.'} The CALL-E API key stays on the server. The entered phone number is sent securely to the backend and CALL-E.
             </div>
           )}
 
@@ -278,7 +304,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
             </div>
           )}
 
-          {callResult?.task_completed && (
+          {callResult?.task_completed && structured && (
             <div className="rounded-xl bg-emerald-400/10 border border-emerald-400/30 p-3 flex items-center gap-2 text-sm text-emerald-200">
               <CheckCircle2 className="w-4 h-4" />
               Verification completed{confidence !== undefined ? ` · confidence ${Math.round(Number(confidence) * 100)}%` : ''}
@@ -290,7 +316,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-2">Supporting evidence</div>
               <ul className="space-y-2 text-xs text-slate-300">
                 {callResult.evidence.slice(0, 5).map((item, index) => (
-                  <li key={index} className="rounded-lg bg-slate-950/50 p-2 border border-slate-800">{item}</li>
+                  <li key={index} className="rounded-lg bg-slate-950/50 p-2 border border-slate-800">{typeof item === 'string' ? item : JSON.stringify(item)}</li>
                 ))}
               </ul>
             </div>

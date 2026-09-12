@@ -80,7 +80,7 @@ async function calleFetch(endpoint: string, init?: RequestInit) {
   }
 
   if (!response.ok) {
-    const message = calleErrorMessage(response.status, data);
+    const message = calleErrorMessage(response.status, data, [apiKey, process.env.CALLE_OPERATOR_TOKEN || "", ...(process.env.CALLE_ALLOWED_PHONES || "").split(",")]);
     console.error(message);
     throw new Error(message);
   }

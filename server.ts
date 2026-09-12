@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { calleErrorMessage } from "./server/calleErrors";
 import express from "express";
 import path from "path";
 import { timingSafeEqual } from "node:crypto";
@@ -79,7 +80,9 @@ async function calleFetch(endpoint: string, init?: RequestInit) {
   }
 
   if (!response.ok) {
-    throw new Error(`CALL-E API returned HTTP ${response.status}. Check the provider dashboard before retrying.`);
+    const message = calleErrorMessage(response.status, data);
+    console.error(message);
+    throw new Error(message);
   }
 
   return data;

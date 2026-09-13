@@ -29,6 +29,23 @@ type CallResult = {
 
 export const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'canceled']);
 
+const sampleResult: CallResult = {
+  status: 'completed',
+  recipients: [{ structured_result: {
+    availability: 'Available — simulated',
+    lead_time: '10 business days — simulated',
+    geographic_coverage: 'Montreal — simulated',
+    certification_status: 'Unknown; documentation needed',
+    indicative_pricing: 'CAD 150 — simulated, non-binding',
+    follow_up_required: true,
+    notes: 'Fictional preview. No call was placed and no supplier facts were verified.',
+  } }],
+};
+
+function readSavedCall(key: string): string {
+  try { return sessionStorage.getItem(key) || ''; } catch { return ''; }
+}
+
 const supportedRegions = [
   ['CA', 'Canada'],
   ['US', 'United States'],
@@ -63,26 +80,25 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
   const [pollVersion, setPollVersion] = useState(0);
   const [supplierName, setSupplierName] = useState('');
   const [phone, setPhone] = useState('');
-  const [region, setRegion] = useState('CA');
+  const [region, setRegion] = useState('US');
   const [questions, setQuestions] = useState(defaultQuestions);
   const [authorized, setAuthorized] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
-  const [callId, setCallId] = useState('');
+  const storageKey = `bidpilot:calle:${opportunity.id}`;
+  const [callId, setCallId] = useState(() => readSavedCall(storageKey));
   const [callResult, setCallResult] = useState<CallResult | null>(null);
+  const [preview, setPreview] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     setQuestions(defaultQuestions);
     setAuthorized(false);
-    setCallId('');
-    setCallResult(null);
-    requestId.current = crypto.randomUUID();
   }, [defaultQuestions]);
 
   useEffect(() => { setAuthorized(false); }, [supplierName, phone, region, questions]);
 
   useEffect(() => {
-    if (!callId) return;
+    if (!callId || !accessToken) return;
 
     let cancelled = false;
     let timer: number | undefined;
@@ -135,6 +151,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
     }
 
     starting.current = true;
+    setPreview(false);
     setIsStarting(true);
     try {
       const response = await fetch('/api/calle/verification', {
@@ -159,6 +176,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
       const id = data.callId || data.call?.id || data.call?.call_id;
       if (!id) throw new Error('CALL-E did not return a call ID');
       setCallId(id);
+      try { sessionStorage.setItem(storageKey, id); } catch { /* Tracking still works in this view. */ }
       setCallResult(data.call || { id, status: 'queued' });
       setAuthorized(false);
     } catch (err) {
@@ -171,7 +189,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
     }
   };
 
-  const structured = callResult?.recipients?.[0]?.structured_result;
+  const structured = (preview ? sampleResult : callResult)?.recipients?.[0]?.structured_result;
   const status = String(callResult?.status || (callId ? 'queued' : 'not started'));
   const confidence = typeof callResult?.completion_confidence === 'number'
     ? callResult.completion_confidence
@@ -200,12 +218,22 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
         </div>
       </div>
 
+      <div className="px-6 sm:px-8 py-4 border-b border-white/10 space-y-2">
+        <button type="button" disabled={!!callId || isStarting} onClick={() => setPreview(v => !v)} className="rounded-lg border border-teal-300 px-4 py-2 text-sm font-bold disabled:opacity-50">
+          {preview ? 'Hide sample result' : 'Preview sample result (no call)'}
+        </button>
+        {preview && <p role="status" className="text-sm text-amber-300 font-bold">SIMULATED RESULT · No phone call or API request. These are fictional supplier answers.</p>}
+        {callId && !accessToken && <p className="text-sm text-amber-300">Saved call tracking restored. Re-enter your operator token to retrieve status without placing another call. Server restarts may prevent retrieval; use the provider dashboard then.</p>}
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-0">
         <div className="p-6 sm:p-8 space-y-4 border-b xl:border-b-0 xl:border-r border-white/10">
           <label className="space-y-1 block">
             <span className="text-xs font-bold text-slate-300">Demo operator token</span>
             <input type="password" autoComplete="off" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm" />
           </label>
+
+          <p className="text-xs text-slate-400">English calls to Canada were rejected in our test. Confirm the provider supports your recipient and language before authorizing a call.</p>
           <fieldset disabled={isStarting || !!callId} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="space-y-1">
@@ -235,7 +263,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
               onChange={(e) => setRegion(e.target.value)}
               className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm outline-none focus:border-teal-500"
             >
-              {supportedRegions.map(([code, label]) => <option value={code} key={code}>{label} ({code})</option>)}
+              {supportedRegions.map(([code, label]) => <option value={code} key={code} disabled={code === 'CA'}>{label} ({code}){code === 'CA' ? ' — English unavailable in test' : ''}</option>)}
             </select>
           </label>
 
@@ -280,13 +308,13 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
             {isStarting ? 'Starting CALL-E…' : 'Authorize & Start Verification Call'}
           </button>
           {callId && <button type="button" onClick={() => { setError(''); setPollVersion(v => v + 1); }} className="text-sm underline">Refresh call status (no new call)</button>}
-          {callId && TERMINAL_STATUSES.has(status.toLowerCase()) && <button type="button" onClick={() => { setCallId(''); setCallResult(null); setAuthorized(false); requestId.current = crypto.randomUUID(); }} className="ml-4 text-sm underline">Prepare a new verification</button>}
+          {callId && TERMINAL_STATUSES.has(status.toLowerCase()) && <button type="button" onClick={() => { try { sessionStorage.removeItem(storageKey); } catch {} setCallId(''); setCallResult(null); setAuthorized(false); requestId.current = crypto.randomUUID(); }} className="ml-4 text-sm underline">Prepare a new verification</button>}
         </div>
 
         <div className="p-6 sm:p-8 space-y-5">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-teal-300" />
-            <h3 className="font-bold">Supplier-reported evidence returned to BidPilot</h3>
+            <h3 className="font-bold">{preview ? 'Fictional supplier result preview' : 'Supplier-reported evidence returned to BidPilot'}</h3>
           </div>
 
           {!structured && (

@@ -46,8 +46,8 @@ for(const value of Object.values(result.recipients[0].structured_result)) assert
 assert.ok(!(await panel.innerText()).includes('completed count'));
 await p.screenshot({path:out+'/result.png'});
 console.log('Scene 4: exact recipient facts rendered');await pause(25000);
-await p.evaluate(()=>{const x=document.createElement('div');x.style.cssText='position:fixed;inset:0;z-index:99998;background:#071b25;color:white;display:flex;align-items:center;justify-content:center;padding:100px;font:30px sans-serif';x.innerHTML='<div><p style="color:#5eead4;font-size:18px">BIDPILOT VOICE</p><h1>Reviewable supplier evidence.<br>Human decisions.</h1><p>✓ TypeScript and production build passed</p><p>✓ Backend safeguards and simulated result checks passed</p><p style="color:#fbbf24">Pending: one consenting live CALL-E test<br>and final real-response acceptance</p></div>';document.body.append(x);});
-console.log('Scene 5: validation and remaining gate');await pause(26000);
+await p.evaluate(()=>{const x=document.createElement('div');x.style.cssText='position:fixed;inset:0;z-index:99998;background:#071b25;color:white;display:flex;align-items:center;justify-content:center;padding:100px;font:30px sans-serif';x.innerHTML='<div><p style="color:#5eead4;font-size:18px">BIDPILOT VOICE</p><h1>Reviewable supplier evidence.<br>Human decisions.</h1><p>✓ TypeScript and production build passed</p><p>✓ Backend safeguards and simulated result checks passed</p><p style="color:#fbbf24">Author-reported live test: 37 seconds, voicemail<br>No supplier answers; live UI response unverified</p></div>';document.body.append(x);});
+console.log('Scene 5: real test outcome and evidence limits');await pause(26000);
 const video=p.video();await c.close();await video.saveAs(out+'/screen.webm');
 // A separate unrecorded page verifies polling-error recovery and a failed terminal response.
 const q=await b.newPage();let qposts=0;let recovered=false;
@@ -55,7 +55,24 @@ await q.route('**/api/calle/**',async route=>{if(route.request().method()==='POS
 await q.goto('http://127.0.0.1:4313');await q.getByRole('button',{name:'Try Demo',exact:true}).first().click();
 await q.getByLabel('Demo operator token').fill('fixture-token');await q.getByLabel('Supplier / provider').fill('Fixture');await q.getByLabel('Phone (E.164)').fill('+15145550123');await q.getByRole('checkbox').check();await q.getByRole('button',{name:'Authorize & Start Verification Call'}).click();await q.getByText('Polling failed; refresh status.',{exact:true}).waitFor();
 recovered=true;await q.getByRole('button',{name:'Refresh call status (no new call)'}).click();await q.getByText(/This call ended without structured supplier facts/).waitFor();assert.equal(qposts,1);
+// Reload must restore only the task ID, require the token again, and never POST.
+await q.reload();
+const demo=q.getByRole('main').getByRole('button',{name:'Try Demo',exact:true});
+if(await demo.count()) await demo.click();
+await q.getByText(/Saved call tracking restored/).waitFor();
+assert.equal(await q.getByLabel('Demo operator token').inputValue(),'');
+await q.getByLabel('Demo operator token').fill('fixture-token');
+await q.getByText(/This call ended without structured supplier facts/).waitFor();
+assert.equal(qposts,1);
+assert.equal(await q.evaluate(()=>Object.values(sessionStorage).some(v=>v.includes('fixture-token'))),false);
+// Public preview must render without any CALL-E network traffic.
+const previewContext=await b.newContext();const previewPage=await previewContext.newPage();let previewRequests=0;
+await previewPage.route('**/api/calle/**',route=>{previewRequests++;return route.abort();});
+await previewPage.goto('http://127.0.0.1:4313');await previewPage.getByRole('main').getByRole('button',{name:'Try Demo',exact:true}).click();
+await previewPage.getByRole('button',{name:'Preview sample result (no call)'}).click();
+await previewPage.getByText('Available — simulated',{exact:true}).waitFor();
+await previewPage.getByText(/SIMULATED RESULT/).waitFor();assert.equal(previewRequests,0);
 assert.deepEqual(errors,[]);await b.close();
-fs.writeFileSync(out+'/ui-checks.json',JSON.stringify({passed:true,simulatedPosts:posts,recipientFieldsMatched:7,authorizationReset:true,fieldsLocked:true,pollRecoveryWithoutNewCall:true,failedTerminalNoFacts:true,pageErrors:errors},null,2));
+fs.writeFileSync(out+'/ui-checks.json',JSON.stringify({passed:true,simulatedPosts:posts,recipientFieldsMatched:7,authorizationReset:true,fieldsLocked:true,pollRecoveryWithoutNewCall:true,failedTerminalNoFacts:true,refreshRestoresWithoutPost:true,publicPreviewNoRequests:true,pageErrors:errors},null,2));
 server.kill();
 console.log('PASS browser checks. Recording: '+out+'/screen.webm');

@@ -4,6 +4,12 @@
 
 BidPilot AI analyzes procurement packages, identifies compliance gaps and bid risks, and helps teams reach a grounded go/no-go decision. For the **CALL-E: Your Code Is Calling** hackathon, BidPilot adds **BidPilot Voice**: an authorized phone-verification workflow that turns unresolved procurement questions into structured evidence.
 
+## Judge quick start
+
+Open [the isolated demo](https://bidpilot-voice-demo.onrender.com), choose **Try Demo**, scroll to **BidPilot Voice**, and click **Preview sample result (no call)**. No credentials or phone calls are required; the results are fictional. See [release and test instructions](docs/RELEASE.md), [submission text](docs/SUBMISSION.md), and [narration script](docs/DEMO.md).
+
+A real operator-authorized test reached voicemail. Supplier answers and real response-to-UI matching remain unverified; the public preview demonstrates simulated results.
+
 ## CALL-E hackathon flow
 
 1. Analyze an RFP / procurement package in BidPilot.
@@ -14,7 +20,7 @@ BidPilot AI analyzes procurement packages, identifies compliance gaps and bid ri
 6. CALL-E identifies itself as an AI calling for procurement verification and asks only the approved business questions.
 7. BidPilot polls the CALL-E result and renders structured evidence such as availability, lead time, coverage, certifications, indicative pricing, and whether human follow-up is required.
 
-The CALL-E API key remains server-side. The operator enters the recipient phone number in the browser; it is sent to the backend and CALL-E. Calls are intentionally constrained so the agent cannot make purchases, negotiate binding terms, make commitments, or request sensitive personal information.
+The CALL-E API key remains server-side. The operator enters the recipient phone number in the browser; it is sent to the backend and CALL-E. The prompt instructs the agent not to make purchases, negotiate binding terms, make commitments, or request sensitive personal information. Human review remains necessary.
 
 ## Architecture
 
@@ -62,7 +68,7 @@ Unknown facts are recorded as unknown rather than inferred.
 
 ## Run locally
 
-**Prerequisites:** Node.js and CALL-E/Gemini API keys.
+**Prerequisites:** Node 22+. No credentials are required for the sample preview. Live calls require the private server settings described in [RELEASE.md](docs/RELEASE.md); fresh analysis additionally requires a Gemini key.
 
 ```bash
 npm install
@@ -70,7 +76,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Set at minimum:
+For optional live analysis/calling, configure privately (also set the operator token and recipient allowlist described in RELEASE.md):
 
 ```bash
 GEMINI_API_KEY="..."

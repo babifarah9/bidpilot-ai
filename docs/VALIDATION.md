@@ -27,3 +27,13 @@ See RELEASE.md for setup, real-response acceptance, and the remaining gates. See
 Render logged a creation failure at 2026-09-12 15:52:53 UTC after the user reported an abort timeout. The previous backend request deadline was 15 seconds; creation now allows 60 seconds and the browser allows 75 seconds. Timeout errors explicitly warn that acceptance is unknown. No automatic redial is added. Do not deploy this update until the existing operation is reconciled: a restart loses in-memory tracking.
 
 CALL-E documentation is now reachable: https://docs.heycall-e.com/calls. It confirms recipient-level structured_result, the supported top-level status values, and recovery by an unchanged original request plus the same idempotency key. It provides no GET /v1/calls list endpoint. Current code retains failed request promises, so same-tab retries return the recorded failure rather than replaying upstream. Check provider history before deciding the recovery path; do not generate a replacement key blindly.
+
+## September 13 finalization
+
+The operator reported a real 37-second CALL-E test reaching voicemail, with AI disclosure and a procurement question. No supplier answers or real API result were captured; live response-to-UI matching remains unverified. The next call was correctly blocked by the one-request process budget. No additional calls were placed during finalization.
+
+Added a public, clearly labeled no-call result preview and sessionStorage recovery of newly returned task IDs (no token, phone, transcript, or supplier facts stored). Token re-entry resumes GET-only status retrieval after refresh; server-restart recovery remains unsupported. English-to-Canada is disabled based on the actual provider rejection, and US is the default.
+
+Validation passed: TypeScript checking; production build; fake-provider authorization, allowlist, deduplication, budget and round-trip checks; all four error-redaction tests; browser checks for all seven recipient fields, authorization reset, request locking, polling error recovery, terminal no-facts state, refresh without an extra POST, and public preview with zero CALL-E requests. Official contribution repository validation passed for the prepared external-app reference and README entry.
+
+The updated narration explicitly separates simulated UI evidence from the author-reported real voicemail test. `scripts/narrate-demo.mjs` creates five 25-second narration segments and combines them with the actual screen recording, targeting a 125-second export.

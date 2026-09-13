@@ -1,6 +1,6 @@
 # BidPilot Voice narrated demo
 
-Target: 2:20–2:40, always below 3:00. The supplied rehearsal uses synthetic narration and a clearly labeled local provider simulation. It is not a live-call demonstration. No real supplier facts or fresh Gemini analysis are claimed.
+Export target: 2:05, always below 3:00. The supplied rehearsal uses synthetic narration and a clearly labeled local provider simulation. It is not a live-call demonstration. No real supplier facts or fresh Gemini analysis are claimed.
 
 ## Narration and screen plan
 
@@ -10,30 +10,32 @@ Target: 2:20–2:40, always below 3:00. The supplied rehearsal uses synthetic na
 
 Show landing page, select Try Demo, show the sample opportunity dashboard.
 
-### 0:25–0:55 — Review the request
+### 0:25–0:50 — Review the request
 
 “From the opportunity dashboard, we open BidPilot Voice. The operator enters a consenting supplier contact and reviews the exact questions. For this example, we ask about availability, lead time, coverage, qualifications, and non-binding indicative pricing. The CALL-E API key remains on the server. A separate operator token and a configured recipient allowlist restrict access to the test workflow.”
 
-Scroll to the panel; enter fixture operator token, fictional supplier, reserved test number, CA, and questions. Keep a persistent LOCAL SIMULATION label.
+Scroll to the panel; enter fixture operator token, fictional supplier, reserved test number, US, and questions. Keep a persistent LOCAL SIMULATION label.
 
-### 0:55–1:20 — Authorization
+### 0:50–1:15 — Authorization
 
 “The agent must identify itself as AI. It may only ask the approved business questions, and it may not place orders or make commitments. The start button requires explicit authorization. Editing the recipient or questions clears that authorization. Once we start, the request is locked. Retrying an unchanged request preserves its identifier to reduce duplicate-call risk.”
 
 Demonstrate unchecked button, check authorization, then start the simulated request.
 
-### 1:20–1:55 — Result and decision
+### 1:15–1:40 — Result and decision
 
 “BidPilot monitors the call and displays the supplier-level result. Here the simulated supplier reports availability, ten business days of lead time, Montreal coverage, and a non-binding price of one hundred fifty Canadian dollars. Certification documentation is still unknown, so human follow-up remains required. These are supplier-reported answers, not independently verified certifications. A task-level completion count never replaces the supplier facts.”
 
 Show queued then completed status and scroll through all seven result fields.
 
-### 1:55–2:20 — Limits and value
+### 1:40–2:05 — Limits and value
 
-“The local implementation passes TypeScript checking, production build, and backend integration checks for authorization, recipient restrictions, duplicate requests, and result retrieval. The next acceptance step is one consenting live CALL-E test, followed by comparison of its actual response with this interface. BidPilot Voice helps procurement teams turn unanswered questions into reviewable evidence while keeping consequential decisions with the human.”
+“The local implementation passes TypeScript checking, production build, and backend integration checks for authorization, recipient restrictions, duplicate requests, and result retrieval. Separately, the operator reported a real thirty-seven-second CALL-E test that reached voicemail. No supplier answers were obtained, and its live response was not captured for UI comparison. BidPilot Voice helps procurement teams turn unanswered questions into reviewable evidence while keeping consequential decisions with the human.”
 
-Show end card with local validation and live-test pending status.
+Show end card with local validation, author-reported real voicemail test, and live response comparison unverified.
 
-## Final live version
+## Evidence boundaries
 
-Replace the opening simulation disclosure and the simulated-result narration only after a real authorized test passes. Use the consenting participant's actual answers. Insert brief consented call audio or CALL-E dashboard evidence; mask identity and tokens. An edited transition can omit waiting time, but label it “Call wait shortened.” Never present a fixture as a real CALL-E response. Recheck exact narration against actual UI values, watch/listen to the complete export, and inspect duration with `ffprobe` before uploading. Submission and publishing remain the user's actions.
+The screen recording shows the functioning app with a local provider fixture. Its closing narration reports the separate real voicemail test; no real call audio or personal identifiers are included. Do not replace the simulation disclosure or present its supplier facts as the real test result. The provider transcript was pasted by the operator; it is author-reported evidence, not independently retrieved by this recording. An unanswered voicemail cannot verify supplier facts. The public sample-result preview also works without an operator token or API request.
+
+Before uploading, verify the MP4 duration with ffprobe and confirm it remains below 180 seconds. The video uses synthetic narration and no background music. Upload to YouTube or Vimeo; the local MP4 is not itself the public submission link.

@@ -1,5 +1,8 @@
 # One additional consenting live test
 
+**Latest acceptance update:** the additional consenting role-play call completed. All seven exported recipient fields match the supplied screenshot exactly; completion confidence 0.86 displays as 86%. Response-to-UI matching now passes for this test. Availability remains unknown. See [live result review](LIVE-RESULT-REVIEW.md); earlier pending statements below describe prior test history.
+
+
 Purpose: confirm the actual CALL-E API result renders correctly in BidPilot. The operator authorized this additional test after the first test reached voicemail. This document is a plan, not a completed acceptance record.
 
 ## Operator setup

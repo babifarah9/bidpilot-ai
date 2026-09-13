@@ -1,5 +1,8 @@
 # BidPilot Voice: release and judge guide
 
+**Latest acceptance update:** the additional consenting role-play call completed. All seven exported recipient fields match the supplied screenshot exactly; completion confidence 0.86 displays as 86%. Response-to-UI matching now passes for this test. Availability remains unknown. See [live result review](LIVE-RESULT-REVIEW.md); earlier pending statements below describe prior test history.
+
+
 Branch: `call-e-hackathon`; implementation PR: https://github.com/babifarah9/bidpilot-ai/pull/1
 Isolated demo: https://bidpilot-voice-demo.onrender.com
 The existing main deployment remains separate. Do not merge or repoint it.

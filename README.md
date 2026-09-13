@@ -8,7 +8,7 @@ BidPilot AI analyzes procurement packages, identifies compliance gaps and bid ri
 
 Open [the isolated demo](https://bidpilot-voice-demo.onrender.com), choose **Try Demo**, scroll to **BidPilot Voice**, and click **Preview sample result (no call)**. No credentials or phone calls are required; the results are fictional. See [release and test instructions](docs/RELEASE.md), [submission text](docs/SUBMISSION.md), and [narration script](docs/DEMO.md).
 
-A real operator-authorized test reached voicemail. Supplier answers and real response-to-UI matching remain unverified; the public preview demonstrates simulated results.
+A completed consenting role-play test returned supplier facts: all seven exported fields match the supplied BidPilot screenshot. Availability remains unknown. See [live result review](docs/LIVE-RESULT-REVIEW.md). The public sample preview remains fictional; the updated video is a labeled replay of captured live-result fields.
 
 ## CALL-E hackathon flow
 

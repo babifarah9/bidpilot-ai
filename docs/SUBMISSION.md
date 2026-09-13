@@ -22,7 +22,9 @@ BidPilot AI is an existing React/TypeScript RFP analysis project. The hackathon 
 
 TypeScript checking, production build, fake-provider integration tests, provider-error redaction tests, and browser checks cover the documented demo. Fixture values are checked against the UI, including supplier-level result nesting and unknown qualification status.
 
-One operator-authorized real CALL-E test lasted 37 seconds and reached voicemail. The operator-provided dashboard transcript shows AI disclosure and the procurement question being left as a message. No supplier answers were obtained. The original API task ID/result was lost on page refresh, so matching that real response to the UI remains unverified. New task IDs now survive refresh within the same browser tab; server-restart recovery remains a limitation.
+The first operator-authorized call reached voicemail. A subsequent consenting supplier role-play test completed and returned structured facts. The operator supplied the app's API-field export and a BidPilot screenshot: all seven recipient fields match exactly, and completion confidence 0.86 displays as 86%. Lead time is ten business days, coverage is Massachusetts, indicative pricing is 150 US dollars, qualification status needs document verification, and human follow-up is true. Availability remains unknown; we preserve that uncertainty.
+
+This validates response-to-UI mapping for this test. The second call's audio/transcript was not supplied, so accuracy against everything spoken remains unverified. The video replays the captured result in the functioning UI, clearly labeled, without placing another call or publishing private contact details. See `docs/LIVE-RESULT-REVIEW.md` for the comparison.
 
 English-to-Canada was rejected in testing. The demo is English-only, defaults to US, and disables Canada. This is an experimental workflow with human decisions, not a production procurement or legal verification system.
 

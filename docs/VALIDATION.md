@@ -1,5 +1,8 @@
 # Local review evidence — September 12, 2026
 
+**Latest acceptance update:** the additional consenting role-play call completed. All seven exported recipient fields match the supplied screenshot exactly; completion confidence 0.86 displays as 86%. Response-to-UI matching now passes for this test. Availability remains unknown. See [live result review](LIVE-RESULT-REVIEW.md); earlier pending statements below describe prior test history.
+
+
 Reviewed starting commit: `1a12098812b8c0df4cd41d4fa97e8feb4e95a900` on `call-e-hackathon`.
 
 - `npm ci --no-audit --no-fund`: passed, 261 packages installed.

@@ -42,12 +42,12 @@ The hosted preview covers simulated results. Live-call testing requires a separa
 
 - Source and implementation PR: https://github.com/babifarah9/bidpilot-ai/pull/1
 - Demo: https://bidpilot-voice-demo.onrender.com
-- Official contribution PR: branch prepared at babifarah9/awesome-phone-call-agents:docs/bidpilot-voice-reference. GitHub integration returned 403 when opening the upstream PR. Open https://github.com/CALLE-AI/awesome-phone-call-agents/compare/main...babifarah9:docs/bidpilot-voice-reference?expand=1 and create a draft PR; enter its resulting URL here.
+- Official contribution PR: https://github.com/CALLE-AI/awesome-phone-call-agents/pull/547 — confirmed open and unmerged.
 - Video: https://youtu.be/OuIqCwQORBc — uploaded by the operator; public playback should be checked while signed out.
 - CALL-E account email: enter the email shown in your CALL-E account. Do not infer it from GitHub or Render.
 
 ## Remaining account actions
 
-The fork and contribution branch are created, and the operator uploaded the video. Open the prepared comparison above and create the upstream draft PR from your GitHub account; the integration cannot create it due to a 403 permission restriction. Confirm the video plays while signed out. Enter your actual CALL-E email and review the Devpost eligibility/terms yourself before submitting. No external commitments or merge have been made by this preparation.
+The official contribution PR is open and the video is uploaded. Confirm the video plays while signed out, enter the actual CALL-E account email, and review the Devpost form before final submission. PR #547 currently has the default template body; replace it with the project summary and video link. The GitHub connection cannot edit the upstream PR because it returns 403. No merge or final Devpost submission has been performed.
 
 Official requirements: https://call-e.devpost.com/ and https://call-e.devpost.com/rules (checked September 13, 2026). Recheck the submission form before final submission.

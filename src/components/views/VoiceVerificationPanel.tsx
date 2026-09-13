@@ -195,6 +195,27 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
     ? callResult.completion_confidence
     : callResult?.completion_confidence?.score;
 
+  const downloadEvidence = () => {
+    if (!callId || !callResult || preview) return;
+    // Preserve the provider fields used by this UI; omit recipient identity and transcripts.
+    const evidence = {
+      source: 'CALL-E API response received by BidPilot',
+      capturedAt: new Date().toISOString(),
+      callId,
+      status: callResult.status,
+      task_completed: callResult.task_completed,
+      completion_confidence: callResult.completion_confidence,
+      overall_structured_result: callResult.structured_result,
+      recipient_structured_result: callResult.recipients?.[0]?.structured_result ?? null,
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(evidence, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'bidpilot-verification-evidence.json';
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   return (
     <section className="bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950 text-white rounded-3xl border border-teal-900/60 shadow-xl overflow-hidden">
       <div className="p-6 sm:p-8 border-b border-white/10 flex flex-col lg:flex-row gap-5 lg:items-center lg:justify-between">
@@ -308,6 +329,7 @@ export const VoiceVerificationPanel: React.FC<Props> = ({ opportunity }) => {
             {isStarting ? 'Starting CALL-E…' : 'Authorize & Start Verification Call'}
           </button>
           {callId && <button type="button" onClick={() => { setError(''); setPollVersion(v => v + 1); }} className="text-sm underline">Refresh call status (no new call)</button>}
+          {callId && callResult && !preview && <button type="button" onClick={downloadEvidence} className="block text-sm underline">Download verification evidence</button>}
           {callId && TERMINAL_STATUSES.has(status.toLowerCase()) && <button type="button" onClick={() => { try { sessionStorage.removeItem(storageKey); } catch {} setCallId(''); setCallResult(null); setAuthorized(false); requestId.current = crypto.randomUUID(); }} className="ml-4 text-sm underline">Prepare a new verification</button>}
         </div>
 
